@@ -1,0 +1,18 @@
+{
+  "name": "aulneau-skills",
+  "version": "0.1.0",
+  "description": "Agent skills, starting with a v4-native Effect-TS skill",
+  "author": {
+    "name": "aulneau"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude",
+    "skills",
+    "effect",
+    "effect-ts"
+  ],
+  "skills": [
+    "./skills/engineering/effect"
+  ]
+}

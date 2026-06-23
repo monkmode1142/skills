@@ -1,0 +1,11 @@
+{
+  "name": "aulneau-skills",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent skills for Claude Code, starting with a v4-native Effect-TS skill",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aulneau/skills"
+  },
+  "license": "MIT"
+}
