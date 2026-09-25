@@ -13,6 +13,8 @@
     "effect-ts"
   ],
   "skills": [
-    "./skills/engineering/effect"
+    "./skills/engineering/effect",
+    "./skills/productivity/bookmark-corpus",
+    "./skills/productivity/brain-dump-post"
   ]
 }

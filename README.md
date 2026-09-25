@@ -14,6 +14,17 @@ optional reference files) that Claude loads on demand when the task matches its 
   wiring, and how to structure an Effect codebase. Corrects the v3-shaped reflexes most models write
   by default.
 
+### Productivity
+
+**Model-invoked:**
+
+- [bookmark-corpus](./skills/productivity/bookmark-corpus/SKILL.md) — turns a week of bookmarks into a
+  corpus: one card per distinct thing with its origin link, the one retellable detail, what a click
+  gives, and any counterpoint. Research only; it does not write the post.
+- [brain-dump-post](./skills/productivity/brain-dump-post/SKILL.md) — picks from that corpus by what a
+  reader gets when they click, and writes a plain, link-first roundup for a low-stakes coworker
+  channel.
+
 ## Install
 
 These install with [`skills`](https://github.com/vercel-labs/skills), the open agent-skills CLI — no
