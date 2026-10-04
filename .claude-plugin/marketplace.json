@@ -1,0 +1,19 @@
+{
+  "name": "aulneau-skills",
+  "description": "aulneau's agent skills and plugins",
+  "owner": {
+    "name": "aulneau"
+  },
+  "plugins": [
+    {
+      "name": "aulneau-skills",
+      "source": "./",
+      "description": "A v4-native Effect-TS skill and productivity skills"
+    },
+    {
+      "name": "pstack",
+      "source": "./plugins/pstack",
+      "description": "poteto's engineering method: poteto-mode, playbooks, principles, and multi-model review"
+    }
+  ]
+}

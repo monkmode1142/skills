@@ -17,3 +17,13 @@ and the plugin manifest entry must agree.
 Each `SKILL.md` is either **user-invoked** (`disable-model-invocation: true`, reachable only by the
 human via `/<name>`) or **model-invoked** (Claude triggers it automatically from its description).
 Group entries in the READMEs under those two headings.
+
+## Plugins
+
+`.claude-plugin/marketplace.json` lists every installable plugin. The root plugin (`source: "./"`) is the
+bucketed skills above, declared in `.claude-plugin/plugin.json`. A self-contained plugin lives in
+`plugins/<name>/` with its own `.claude-plugin/plugin.json`, `skills/<skill>/SKILL.md`, `agents/`, README,
+and LICENSE, and gets one entry in `marketplace.json` and one in the README's Plugins section. Its skills
+stay out of the bucket READMEs and the root `plugin.json`. Run `claude plugin validate .` and
+`claude plugin validate plugins/<name>` after any manifest change.
+
