@@ -19,33 +19,9 @@ Do not force a test when it would be impractical. If the available test would re
 5. **Fix the bug.** Make the smallest production change that satisfies the intended behavior while preserving nearby contracts.
 6. **Rerun the regression test.** Confirm the test now passes.
 
-## Effect Code
+## Stack add-ons
 
-Tests for Effect code follow the same workflow. Load the **effect** skill, run its SKILL §1 version gate, and read SKILL §7 before writing the test. Depth is in its `references/testing.md`.
-
-- **Use `@effect/vitest`.** Read `package.json` and one existing test first. Effect tests run on `@effect/vitest` at the same version as `effect`, on Vitest 5. Write `it.effect("name", () => Effect.gen(...))`. It provides a `Scope`, `TestClock`, and `TestConsole`. `it.live` runs on the real clock. There is no `it.scoped`. A plain `it` that returns an Effect never runs it, and `Effect.runPromise` inside a plain `it` bypasses the test services. If the project lacks it, add it at the `effect` version instead of hand-running Effects with `Effect.runPromise` in another runner (`references/testing.md` §1, §2).
-- **On Bun, when Vitest can't load the code** (`bun:sqlite`, Bun-only APIs), use the project's `it.effect` equivalent, usually `test/support/effect.ts`, or create it from `references/testing.md` §1 "Running on bun:test". Matching repo style never justifies `Effect.runPromise` in a test body or a per-file `run` helper. Those escape `TestClock`, and the next agent copies them.
-- **Run the real service over test layers.** Build the service under test from its real recipe layer (`layerNoDeps`). Replace only its ports (vendor clients, network, storage) with `Layer.succeed(Port, fake)`, `Layer.mock(Port, partial)`, or an in-memory layer. Do not reach for a mocking framework. The dependency is already injected, so the swap is the test seam. Provide per test with `Effect.provide(layer)`. A shared `layer(L)` block carries state, clock time, and console lines across tests (`references/testing.md` §4).
-- **Drive time with `TestClock`.** Advance it with `TestClock.adjust` instead of sleeping. It starts at epoch 0. Fork the sleeping effect, adjust, then join. A real delay under `it.effect` hangs until the Vitest timeout. A timing bug then reproduces deterministically on every run (`references/testing.md` §5).
-- **Assert the typed failure.** For a failure path, flip the effect (`Effect.flip`) or read `Effect.result`, then assert the error's `_tag` and fields. Assert a defect through `Effect.exit` and the `Cause` reasons. Don't compare whole failed `Exit`s, because `Effect.fn` spans annotate the cause. "It failed" is not the behavior. `InvoiceNotFound` for `inv_missing` is (`references/testing.md` §3).
-- **Prove the test can fail.** Step 4 is not optional here. Break the code the test pins with an editor, watch that test go red for the right reason, and restore. Never use `git checkout` or `git stash` for the mutation (`references/testing.md` §11).
-- **Read the count, not only the exit code.** A run that finds no tests exits 1, but a `-t` filter that matches nothing skips every test and exits 0. The run is evidence only when the summary shows your test as passed. Typecheck the test files too, because `it.scoped` and dropped error cases only fail in `tsc`.
-
-```ts
-import { expect, it } from "@effect/vitest";
-import { Effect } from "effect";
-import { TestClock } from "effect/testing";
-import { Leases } from "./leases.js";
-
-it.effect("a lease is released after its 30 second ttl", () =>
-  Effect.gen(function* () {
-    const leases = yield* Leases;
-    const lease = yield* leases.acquire("job-1");
-    yield* TestClock.adjust("31 seconds");
-    expect(yield* leases.isHeld(lease)).toBe(false);
-  }).pipe(Effect.provide(Leases.layer)),
-);
-```
+When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, run the workflow above with the runner and test conventions in its Tests section.
 
 ## If a Failing Test Is Impractical
 

@@ -10,15 +10,7 @@ Design before implementing. Sketch types, function signatures, class shapes, and
 
 ## The design unit
 
-The sketch is written in the target's own idiom. When the boundary is non-frontend TypeScript (services, CLIs, workers, scripts, infra), the design unit is an Effect service, not a class or a loose set of functions. Each sketched capability has:
-
-- a `Context.Service` contract. The tag plus a narrow, domain-shaped interface whose methods return `Effect`s.
-- `Layer` provision. How the implementation is built and which services it requires, so the dependency graph is visible in the sketch.
-- Schema data. Domain types and external inputs as Schemas, decoded once at the boundary.
-- tagged errors. Each expected failure is a tagged error in the error channel, not a thrown exception.
-- an Effect inventory. For each capability the sketch would build (time, retry, polling, cache, queue, lock, parsing, ordering, grouping, decimal, graph, LLM I/O), name what you searched in the installed `effect` and what you chose, as `searched X, chose Z (dist/<file>:<line>)` or `none fits because …`. It becomes the brief's `EFFECT MAP` block, which `orch brief check` validates.
-
-Bodies stay unimplemented, as in any other sketch. Apply the service test from **effect-service-design** before minting a service. A pure calculation or a per-call option stays a value. Defer every API detail to the **effect** skill, plus **effect-service-design** when installed, and run its SKILL §1 version gate against the project's installed version. Don't write signatures from memory. Its SKILL §4 and §5 and `references/architecture.md` §2 and §8 give the service and Layer shape, `references/schema.md` §8 the data, and `references/errors.md` §2 and §3 the failures. [effect.md](../poteto-mode/references/effect.md) maps the rest. Frontend UI code stays plain TypeScript unless the project already uses Effect there.
+The sketch is written in the target's own idiom. When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, the sketch shows the stack add-on's sketch items (its Design section), and API detail defers to the add-on skill after its version gate. Don't write signatures from memory. Bodies stay unimplemented, as in any other sketch.
 
 ## Start
 
@@ -64,7 +56,7 @@ If the human pushes back on the shape (in a checkpoint or after the fact), treat
 
 ## Phase D: Implement against the sketch
 
-Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract. A delegate that fills in Effect code gets the two brief lines from [effect.md](../poteto-mode/references/effect.md) (Delegating Effect work) verbatim, and the fill-in is done only when the effect skill's SKILL §8 checklist passes.
+Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract. When a stack add-on applies, a delegate that fills in code gets its delegate lines verbatim, and the fill-in is done only when the add-on's done checklist passes.
 
 Deviations from the sketch are signal worth surfacing, not friction to absorb silently. If a function needs a parameter the sketch didn't anticipate, ask whether the sketch was wrong, the requirement was missed, or the implementation is overreaching.
 
@@ -77,7 +69,7 @@ The signal is a *pattern*, not single instances. Tells:
 - The same shape of workaround appearing repeatedly across unrelated code.
 - Multiple unrelated edge cases that all need special-case branches.
 - Types that need escape hatches (`any`, casts, optional fields always set in practice) to compile.
-- In an Effect design, service methods whose requirements leak the implementation's dependencies to callers, or error channels that collapse to `unknown` or one catch-all error (catalog B5 and B9 in the effect skill's `references/review.md`).
+- A red flag the stack add-on's Design section names.
 - The "we need a lock" reflex when the sketch said the state wasn't shared.
 - Callers having to know the abstraction's internal rules to use it.
 - Two or more independent Phase D deviations of the same shape across the implementation.
@@ -93,4 +85,4 @@ When you scrap:
 
 ## Outputs
 
-The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes. Module map plus type definitions for larger work. For an Effect design, the module map is the service and Layer graph. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision. Derive the decision with **reason-from-first-principles** and write it per distill-writing's `references/decision-writing.md`. A module whose job you can't state in a sentence goes through **find-the-kernel** before it ships (poteto-mode's `references/thinking.md`).
+The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes. Module map plus type definitions for larger work. When a stack add-on applies, the module map takes the shape its Design section names. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision. Derive the decision with **reason-from-first-principles** and write it per distill-writing's `references/decision-writing.md`. A module whose job you can't state in a sentence goes through **find-the-kernel** before it ships (poteto-mode's `references/thinking.md`).

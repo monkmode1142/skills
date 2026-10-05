@@ -28,13 +28,13 @@ Each dimension is stated once. Apply the ones that are relevant.
 
 4. **Prefer direct, boring, maintainable code over hacky or magical code.** Treat brittle, ad-hoc, or "magic" behavior as a problem. Be skeptical of generic mechanisms that hide simple data-shape assumptions. Flag thin abstractions, identity wrappers, or pass-through helpers that add indirection without buying clarity.
 
-5. **Push on type and boundary cleanliness when it affects maintainability.** Question unnecessary optionality, `unknown`, `any`, or cast-heavy code when a clearer type boundary could exist. Prefer explicit typed models over loosely-shaped ad-hoc objects. If a branch leans on a silent fallback to paper over an unclear invariant, ask whether the boundary should be made explicit. In Effect code, expected failures belong in the typed error channel as tagged errors, and untrusted input is decoded with Schema once at the boundary. Check the specifics against dimension 8.
+5. **Push on type and boundary cleanliness when it affects maintainability.** Question unnecessary optionality, `unknown`, `any`, or cast-heavy code when a clearer type boundary could exist. Prefer explicit typed models over loosely-shaped ad-hoc objects. If a branch leans on a silent fallback to paper over an unclear invariant, ask whether the boundary should be made explicit. Check the stack-specific forms against dimension 8.
 
 6. **Keep logic in the canonical layer and reuse existing helpers.** Call out feature logic leaking into shared paths or implementation details leaking through APIs. Prefer existing canonical utilities over bespoke one-offs. Push code toward the right package, service, or module instead of normalizing drift.
 
 7. **Treat unnecessary sequential orchestration and non-atomic updates as design smells when the cleaner structure is obvious.** If independent work is serialized for no reason, ask whether it should run in parallel. If related updates can leave state half-applied, push for a more atomic structure. Do not over-index on micro-optimizations, but do flag avoidable orchestration complexity that makes the code more brittle.
 
-8. **Review Effect code with the effect skill's `references/review.md` procedure.** It lives at `~/.agents/skills/effect/references/review.md`, plain Markdown any reviewer can read. Run its version gate and evidence gate first, because a finding written from v3-shaped memory is noise. Sweep the diff with its grep recipes against smell catalog A (a hand-rolled capability Effect already ships, the Effect form of dimension 6) and catalog B (against the grain, where B14 is the Effect form of dimension 7). Check test files against its false-greens list, and read the language-service diagnostics when the project has them. Cite each Effect API from the installed `.d.ts` or `src`, never from memory, and tag the finding with its tier and rule id (for example `BUG`, catalog B1).
+8. **Run the stack add-on's review lens when one applies** ([Stack add-ons](../../poteto-mode/references/harness.md#stack-add-ons)). Cite each library API from the installed type declarations or source, never from memory.
 
 ## Output Expectations
 

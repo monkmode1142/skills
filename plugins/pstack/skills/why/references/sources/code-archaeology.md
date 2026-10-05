@@ -76,7 +76,7 @@ rg -l '<symbol>' --glob '*test*'
 - **Squash-merge flatlands.** If the repo squashes PRs, individual commits in the branch history are lost. Fall back to PR body and comments.
 - **Misleading commit messages.** "Small refactor" sometimes hides an intentional behavior change. Look at the diff, not the message.
 - **Cargo-culted patterns.** The author may have copied a pattern without understanding why. Check if the pattern originated earlier in the codebase and investigate *that* commit.
-- **Version-shaped code.** An Effect API that looks odd (`Context.Tag`, `Either`, an `effect/unstable/*` import) often only reflects the version installed when it was written. Date it against the lockfile history and the effect skill's `references/migration.md` before reading it as a design choice.
+- **Version-shaped code.** A library API that looks odd often only reflects the version installed when it was written. Date it against the lockfile history and the library's migration notes before reading it as a design choice.
 - **Bot commits and auto-merges.** Dependabot, Renovate, and automated backports usually don't carry motivation. Skip them when trying to find intent.
 - **Treating code as evidence of intent.** The code itself isn't evidence for why it exists. Evidence comes from commit messages, PRs, comments, tests, docs. Don't cite "the function is named X" as evidence of intent.
 

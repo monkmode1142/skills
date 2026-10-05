@@ -33,7 +33,7 @@ Inside bb ([harness.md](../poteto-mode/references/harness.md), Inside bb), a wor
 
 When a worker must start from a non-default branch, create its worktree from that branch.
 
-Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first. A worker that writes Effect code gets the two brief lines from [effect.md](../poteto-mode/references/effect.md) (Delegating Effect work) verbatim, and a worker that reviews an Effect diff gets "Use the effect skill's `references/review.md` procedure".
+Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence. A worker that can prove a defect reports `ISSUES` and lists every issue it can prove, not only the first. When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, a worker that writes code gets its delegate lines verbatim, and a worker that reviews a diff runs its review lens.
 
 If a worker drops out, proceed with N-1 and note it.
 

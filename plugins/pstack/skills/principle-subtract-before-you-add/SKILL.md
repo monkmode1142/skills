@@ -19,5 +19,3 @@ Make simplification a continual investment. Leave the design slightly simpler an
 - No speculative validators, parsers, or guards beyond what the spec demands
 - Simplify prompts (remove redundant instructions, excessive templates)
 - When a reference has no novel content, delete it rather than leaving a stub
-
-**In Effect code** a hand-rolled cache, retry loop, mutex, or validator that duplicates a platform primitive is the first thing to subtract. Check the **effect** skill's SKILL §2 table before keeping it.

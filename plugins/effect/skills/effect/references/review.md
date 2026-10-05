@@ -522,8 +522,8 @@ The last block doubles as a migration-leftover detector; for the replacements se
 ## The Effect-expert seat
 
 An independent reviewer whose only question is "does Effect ship this?". The author's own §8 pass doesn't
-count as this review. In Orchestrate it is a required lens inside the cross-family verifier on every unit
-whose brief mentions Effect. It runs as its own seat, still from the other model family, when the diff
+count as this review. In Orchestrate it is the `effect` review lens, required for landing once the program
+runs `orch lens require effect` (`references/pstack.md`, Review), inside the cross-family verifier. It runs as its own seat, still from the other model family, when the diff
 touches the shared test helper, a harness, a composition root, lint or diagnostics config, or the Effect
 pin. Outside Orchestrate it runs at Feature step 5 and at Opening a PR. Landing checks its verdict for the
 exact head SHA (`orch ledger check <pr> <sha> --unit <id>`).
@@ -538,7 +538,7 @@ STEP 2    Run the grep recipes above on changed files and the harnesses they cal
 STEP 3    Evidence gate per hit: the export exists (dist path:line), the behavior is equivalent (name the trap), the hand-roll is not deliberate (SKILL §5 exceptions).
 STEP 4    Catalog B and False greens over changed code and tests. Every changed test runs on TestClock through it.effect or the project's equivalent.
 STEP 5    Contracts: boundary data is Schema; failures are Schema.TaggedError in E; ports are Context.Service + layer; resources are scoped; forks are owned.
-REPORT    VERDICT idiomatic | fixes-required | inconclusive, keyed to HEAD; findings in §4 format; a checked-and-fine list.
+REPORT    VERDICT pass (idiomatic) | fixes-required | inconclusive, keyed to HEAD; findings in §4 format; a checked-and-fine list.
           Orchestrate: orch ledger record <pr> <HEAD> <verdict> --lens effect --evidence <report>.
 FORBIDDEN Edits, commits, live calls. A finding without a dist path:line is inadmissible, and so is "no replacements" without the inventory.
 ```

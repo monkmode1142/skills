@@ -23,7 +23,7 @@ Start by finding the relevant code. Search file paths to find directories and fi
 Follow this pattern:
 1. **Find the entry point.** What triggers this behavior? A user action, an API call, a scheduled job? Find where it starts.
 2. **Trace the flow.** Follow the call chain from the entry point. Read each function. Understand what data flows through and how it transforms.
-3. **Map the key abstractions.** What types, interfaces, services, or classes are central? Read their definitions. Understand what they represent and why they exist. In an Effect codebase, these are the `Context.Service` tags, the Layers that provide them, and the Schema types, and the effect skill's `references/architecture.md` §1 explains how each `yield*` resolves to a Layer.
+3. **Map the key abstractions.** What types, interfaces, services, or classes are central? Read their definitions. Understand what they represent and why they exist. When a [stack add-on](../../poteto-mode/references/harness.md#stack-add-ons) applies, it names the stack's key abstractions.
 4. **Find the boundaries.** Where does this subsystem interface with others? What goes in, what comes out?
 5. **Look for the non-obvious.** Anything surprising? Anything that looks like a historical artifact? Anything a newcomer would misunderstand?
 

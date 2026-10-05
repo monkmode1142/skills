@@ -30,6 +30,7 @@ The skill routes to these by task:
 | [review.md](./skills/effect/references/review.md) | Reviewing Effect code: the procedure, the hand-roll catalog, and the Effect-expert seat |
 | [migration.md](./skills/effect/references/migration.md) | Migrating to 4.0.0 from v3 or an RC |
 | [v4-catalog.md](./skills/effect/references/v4-catalog.md) | Idioms, near-twins, migration tables, and behavior traps |
+| [pstack.md](./skills/effect/references/pstack.md) | The pstack stack add-on: how Effect plugs into each pstack step, and the rule line that turns it on |
 
 ## Checking the examples
 

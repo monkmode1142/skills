@@ -13,7 +13,7 @@ Scan for:
 - Verifications that were skipped, deferred, or self-reported instead of artifact-checked
 - Cases where the agent solved the local problem and missed the second-order effect (callers, sibling consumers, downstream telemetry)
 - Architectural smells the immediate fix papers over
-- Skills that should have been invoked but weren't, or were invoked too late. Effect code written or reviewed without the effect skill's §1 version gate, its §8 checklist, or its `references/review.md` is this case.
+- Skills that should have been invoked but weren't, or were invoked too late. Code a stack add-on covers, written or reviewed without the add-on's version gate, done checklist, or review lens, is this case.
 - Implicit assumptions about scope, side effects, or what the user actually wanted
 
 ## Scope to skills and tools the session actually used

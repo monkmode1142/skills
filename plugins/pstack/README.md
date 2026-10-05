@@ -6,7 +6,7 @@ this is a fork of [pstack](https://github.com/cursor/plugins/tree/main/pstack) v
 
 - **agent-agnostic.** skills name capabilities in plain words ("spawn a subagent", "ask the user") instead of one product's tools. [`skills/poteto-mode/references/harness.md`](./skills/poteto-mode/references/harness.md) maps each capability to Claude Code, Codex, and a fallback for any other harness.
 - **vendor integrations removed.** no plugin marketplace, automations, bot ui, team chat, issue tracker, or observability integrations. code hosting is `gh`.
-- **Effect-v4-first typescript.** non-frontend typescript (services, CLIs, scripts, workers) is written in Effect v4. skills defer to the **effect** skill for the API.
+- **stack add-ons.** pstack is language-neutral. a stack add-on is a skill that owns a language's idioms plus a reference saying how it plugs into each pstack step, and an always-applied rule turns it on ([harness.md](./skills/poteto-mode/references/harness.md), Stack add-ons). one example is the effect plugin in `aulneau/skills`, for Effect v4 typescript.
 - **renames.** `tdd` is now `pstack-tdd` and `teach` is now `pstack-teach`, so they don't collide with other installed skills. `make-bot-ui` is gone.
 
 the rest of this readme is poteto's, ported to match.
@@ -151,7 +151,7 @@ the full rules and playbooks live in [`skills/poteto-mode/SKILL.md`](./skills/po
 | [`/automate-me`](./skills/automate-me/SKILL.md) | you want your own `-mode` skill, drafted from how you've actually worked. |
 | [`/setup-pstack`](./skills/setup-pstack/SKILL.md) | you want to pick which models pstack uses per role. detects your models and writes `~/.agents/pstack/models.md`. |
 | [`/reflect`](./skills/reflect/SKILL.md) | a long task landed and you want the recipe captured as a skill edit. |
-| [`/correct`](./skills/correct/SKILL.md) | you keep correcting agents for the same mistakes. mines commits, reviews, and chat history (bb threads included) for mistake classes, fixes each at the highest level that works (architecture, then types and lint, with the effect language service for Effect code, then tests, with docs last), and keeps a table in `AGENTS.md` pairing each rule with what enforces it. |
+| [`/correct`](./skills/correct/SKILL.md) | you keep correcting agents for the same mistakes. mines commits, reviews, and chat history (bb threads included) for mistake classes, fixes each at the highest level that works (architecture, then types and lint, with a stack add-on's lint forms when one applies, then tests, with docs last), and keeps a table in `AGENTS.md` pairing each rule with what enforces it. |
 | [`/pstack-teach`](./skills/pstack-teach/SKILL.md) | you want to actually understand a change or subsystem, not just have it summarized. runs how + why and weaves one plain explanation, built up diagram by diagram. |
 | [`/pstack-tdd`](./skills/pstack-tdd/SKILL.md) | you're fixing a bug and there's a cheap local test path. write the failing test first, then the fix. |
 | [`/benchmark-checklist`](./skills/benchmark-checklist/SKILL.md) | you ran a benchmark or measured a speedup or regression. vets the number (limiter, tuning, errors, repeat runs, end-to-end relevance) before you report or act on it. |
@@ -263,7 +263,7 @@ twenty-four short skills, one principle each. `poteto-mode` indexes them inline 
 
 a few things `poteto-mode` references but doesn't bundle:
 
-- the **effect** skill, the API truth for Effect v4 code, and **effect-service-design** for new service modules. pstack defers to them instead of re-teaching the API.
+- stack add-ons. pstack names none. an always-applied rule turns one on (see **stack add-ons** above).
 - the **writing-great-skills** skill, used when authoring a skill. without it, pstack falls back to the harness's own skill-authoring guidance.
 - a project verification skill (`verify-*`). generate one with [`/create-verification-skill`](./skills/create-verification-skill/SKILL.md), or drive the surface directly (browser MCP, tmux) per [harness.md](./skills/poteto-mode/references/harness.md).
 

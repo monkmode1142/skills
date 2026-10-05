@@ -15,6 +15,4 @@ Aim for the most result with the least code and complexity.
 - **Question the threading.** If a task asks you to pass a new signal through types, schemas, pipelines, or similar layers, stop and look for a more direct path.
 - **Sweat the small leaks.** Remove tiny pass-throughs, representation leaks, and duplicated choices before they spread. Small leaks compound into permanent coordination costs.
 
-**In Effect code** the smallest change is often no new code. Before hand-rolling a cache, retry loop, queue, rate limiter, or client, assume Effect ships it and look. Open the **effect** skill's SKILL §2, then `references/primitives.md` or `references/modules.md`.
-
 **The test:** If a human developer would find the code exhausting to maintain, it is a bad solution.

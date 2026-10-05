@@ -17,3 +17,5 @@ jobs:
       - run: npm ci
         working-directory: plugins/effect/scripts/effect-examples
       - run: node plugins/effect/scripts/check-effect-examples.mjs
+      - uses: oven-sh/setup-bun@v2
+      - run: bun test plugins/effect/scripts/check-effect-map.test.ts

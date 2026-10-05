@@ -18,7 +18,7 @@ Identify what to review from context:
 - If on a feature branch, run `git diff main...HEAD` (or the appropriate base branch) for the full changeset
 - If the user's message references recent work, gather the relevant files
 
-Package the diff (or file contents) plus any surrounding context files the reviewers need to understand the code. When the diff touches Effect code, add the installed `effect` version from the effect skill's SKILL §1 gate, so every reviewer judges against the same version (routing in [effect.md](../poteto-mode/references/effect.md)).
+Package the diff (or file contents) plus any surrounding context files the reviewers need to understand the code. When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, add the installed version from its version gate, so every reviewer judges against the same version, and have reviewers run its review lens.
 
 ## Step 2, State the Intent
 

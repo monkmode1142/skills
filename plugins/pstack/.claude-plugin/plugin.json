@@ -1,7 +1,7 @@
 {
   "name": "pstack",
-  "version": "0.16.0",
-  "description": "poteto's engineering method: poteto-mode, playbooks, principles, and multi-model review, with an Effect-v4-first default",
+  "version": "0.17.0",
+  "description": "poteto's engineering method: poteto-mode, playbooks, principles, and multi-model review. Language-neutral, with stack add-ons such as the effect plugin",
   "author": {
     "name": "Lauren Tan (poteto)",
     "url": "https://x.com/poteto"
@@ -9,5 +9,11 @@
   "homepage": "https://github.com/aulneau/skills/tree/main/plugins/pstack",
   "repository": "https://github.com/aulneau/skills",
   "license": "MIT",
-  "keywords": ["pstack", "poteto-mode", "agents", "orchestration", "effect"]
+  "keywords": [
+    "pstack",
+    "poteto-mode",
+    "agents",
+    "orchestration",
+    "stack-add-ons"
+  ]
 }

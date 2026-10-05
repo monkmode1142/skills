@@ -28,4 +28,4 @@ pstack is strong at building and proving code. Four companion skills cover the w
 
 - **Interviews.** Neither skill set makes an interview a stage. Infer from context, then ask only the questions that would change the work, per poteto-mode's ask-the-user rule.
 - **Style.** **distill-writing** governs substance. **unslop** governs surface. When they seem to disagree, keep the meaning distill-writing protects and fix the surface another way.
-- **Effect.** Writing about Effect code still follows `references/effect.md` for technical claims. A sentence about an API is only as true as the version gate behind it.
+- **Stack add-ons.** Writing about code a stack add-on covers still runs its version gate for technical claims (`references/harness.md`, Stack add-ons). A sentence about an API is only as true as the version gate behind it.

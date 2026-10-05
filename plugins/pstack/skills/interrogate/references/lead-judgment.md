@@ -37,7 +37,7 @@ Watch for findings that reveal the reviewer didn't understand the context:
 - Suggesting changes to code the author didn't write or modify
 - Flagging patterns that are consistent with the rest of the codebase (the reviewer just doesn't know that)
 - Recommending approaches that conflict with constraints you know about
-- Proposing an Effect API that the installed version does not have. Check it against the evidence gate in the effect skill's `references/review.md`, and keep the underlying smell if it is real.
+- Proposing a library API that the installed version does not have. Check it against the installed source, or the stack add-on's review lens when one applies, and keep the underlying smell if it is real.
 
 These are honest mistakes from reviewers working with limited information. Dismiss them gracefully.
 

@@ -29,7 +29,9 @@ claude plugin install effect@aulneau-skills
 claude plugin install pstack@aulneau-skills
 ```
 
-pstack's Effect steps rely on the effect plugin, so install both when you use pstack on Effect code.
+pstack is language-neutral. The effect plugin adds Effect to it as a stack add-on, switched on by one line in an always-applied rule (`~/.claude/CLAUDE.md`, a project `AGENTS.md`, or a Devin rule):
+
+> Stack add-on: effect, for non-frontend TypeScript (frontend UI code only when the project already uses Effect there). Follow the effect skill's `references/pstack.md`.
 
 The skills above install the same way as `aulneau-skills@aulneau-skills`. `bunx skills add aulneau/skills` also picks up the effect and pstack skills, without pstack's subagents.
 

@@ -52,7 +52,7 @@ Can you tell that this code works from reading it?
 - If this touches an integration boundary: is the full path tested?
 - Check the real thing, not a proxy. If the code checks liveness via file mtime or cached state instead of reading the actual value, that's a verification gap.
 - For delegated or async work: does the code verify actual output artifacts, or does it trust self-reports and summaries?
-- For Effect tests: do any match the false greens in the effect skill's `references/review.md`, such as a plain `it` returning an Effect, `it.scoped`, or `Effect.runPromise` inside a test? Those pass without running anything.
+- When a stack add-on applies, do any tests match the false greens its review lens lists? Those pass without running anything.
 
 ## Complexity Budget
 

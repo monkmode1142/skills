@@ -610,7 +610,7 @@ describe("Store", () => {
     );
   });
 
-  it("refuses briefs missing template fields, standing orders, or Effect delegate lines", async () => {
+  it("refuses briefs missing template fields or current standing orders", async () => {
     const { directory, store } = await storeWithGoal();
     await store.standing.add({ line: "Never force push." });
 
@@ -619,7 +619,7 @@ describe("Store", () => {
       "briefs/ad-hoc.md",
       [
         "# K1: cache parsed exports",
-        "Read the poteto-mode skill. Effect 4.0.0 version gate first; finish with the effect skill's §8 checklist.",
+        "Read the poteto-mode skill.",
         "## Why",
         "Parsing runs twice per request.",
         "## Contract",
@@ -640,10 +640,6 @@ describe("Store", () => {
       "missing REPORT",
       "missing STANDING",
       "STANDING lacks 1 of 1 current standing orders; paste preferences.md verbatim (orch standing show)",
-      'Effect brief lacks the delegate line from references/effect.md: "Load the **effect** skill and run its §1 version gate before writing code. Follow the installed version where it differs."',
-      'Effect brief lacks the delegate line from references/effect.md: "Before reporting done, run the effect skill\'s §8 checklist and include its result."',
-      `Effect brief lacks the delegate line from references/effect.md: "${THIRD_LINE}"`,
-      "Effect brief lacks an EFFECT MAP block in CONTEXT (references/effect.md, Delegating Effect work)",
     ]);
     await expect(
       store.units.add({ id: "k1", track: "build", brief: adHoc, serves: "G1" })
@@ -864,256 +860,191 @@ describe("orch CLI", () => {
   });
 });
 
-const THIRD_LINE =
-  "Before writing a helper for time, retry, polling, cache, queue, lock, parsing, ordering, grouping, decimal, graph or LLM I/O, search the installed effect (`references/primitives.md`, `modules.md`, review.md catalog A). Report each hand-rolled capability with the export checked (`dist/…:line`) and why it does not fit, or `none`.";
-const DELEGATE_LINES = [
-  "Load the **effect** skill and run its §1 version gate before writing code. Follow the installed version where it differs.",
-  "Before reporting done, run the effect skill's §8 checklist and include its result.",
-  THIRD_LINE,
-];
-
-function effectBrief({
-  map = "EFFECT MAP   none: string formatting only",
-  lines = DELEGATE_LINES,
-  repo,
-}: {
-  map?: string | null;
-  lines?: readonly string[];
-  repo?: string;
-} = {}): string {
+function fieldBrief(extra: readonly string[]): string {
   return [
-    "GOAL         Retry the Effect export fetch.",
+    "GOAL         Bound the export retries.",
     "SCOPE        src/export/**",
-    `CONTEXT      docs/export.md${repo === undefined ? "" : `; Repo ${repo}.`}`,
-    ...(map === null ? [] : [map]),
+    "CONTEXT      docs/export.md",
+    ...extra,
     "PREMISES     export format: evidence/export-sample.md",
     "ACCEPTANCE   retries are bounded",
     "VERIFY       bun test src/export",
     "TIMEBOX      45m",
     "FORBIDDEN    no rebase",
     "REPORT       status, head SHA",
-    ...lines,
     "STANDING",
     "",
   ].join("\n");
 }
 
-async function fakeEffect(packageDir: string, version: string): Promise<void> {
-  const root = join(packageDir, "node_modules", "effect");
-  await mkdir(join(root, "dist"), { recursive: true });
-  await writeFile(
-    join(root, "package.json"),
-    JSON.stringify({ name: "effect", version })
-  );
-  await writeFile(
-    join(root, "dist", "Schedule.d.ts"),
-    "export {}\nexport declare const exponential: unknown\nexport declare const spaced: unknown\n"
-  );
-}
-
-describe("Effect briefs", () => {
-  it("refuses an Effect brief without the toolbox line or an EFFECT MAP, and passes a complete one", async () => {
+describe("Registered brief fields", () => {
+  it("requires each registered field, found even when indented inside CONTEXT", async () => {
     const { directory, store } = await initializedStore();
+    expect(await store.briefs.require({ field: "THREAT MODEL", check: "" })).toEqual({
+      field: "THREAT MODEL",
+      check: "",
+    });
+    await expect(store.briefs.require({ field: "threat model", check: "" })).rejects.toThrow(
+      "field must be upper case words"
+    );
 
+    await writeBrief(directory, "briefs/none.md", fieldBrief([]));
+    expect(await store.briefs.check("briefs/none.md")).toEqual([
+      "missing THREAT MODEL (required by orch brief require)",
+    ]);
+    await writeBrief(directory, "briefs/empty.md", fieldBrief(["THREAT MODEL"]));
+    expect(await store.briefs.check("briefs/empty.md")).toEqual(["empty THREAT MODEL"]);
     await writeBrief(
       directory,
-      "briefs/two-lines.md",
-      effectBrief({ lines: DELEGATE_LINES.slice(0, 2) })
+      "briefs/indented.md",
+      fieldBrief(["             THREAT MODEL: tokens never leave the vault"])
     );
-    expect(await store.briefs.check("briefs/two-lines.md")).toEqual([
-      `Effect brief lacks the delegate line from references/effect.md: "${THIRD_LINE}"`,
-    ]);
-
-    await writeBrief(directory, "briefs/no-map.md", effectBrief({ map: null }));
-    expect(await store.briefs.check("briefs/no-map.md")).toEqual([
-      "Effect brief lacks an EFFECT MAP block in CONTEXT (references/effect.md, Delegating Effect work)",
-    ]);
-
-    await writeBrief(
-      directory,
-      "briefs/empty-map.md",
-      effectBrief({ map: "EFFECT MAP" })
-    );
-    expect(await store.briefs.check("briefs/empty-map.md")).toEqual([
-      "EFFECT MAP is empty; name each capability with the export checked (dist/<file>:<line>), or none with the reason",
-    ]);
-
-    await writeBrief(directory, "briefs/ok.md", effectBrief());
-    expect(await store.briefs.check("briefs/ok.md")).toEqual([]);
+    expect(await store.briefs.check("briefs/indented.md")).toEqual([]);
+    expect(await store.briefs.fields()).toEqual([{ field: "THREAT MODEL", check: "" }]);
   });
 
-  it("refuses EFFECT MAP citations that do not resolve under the repo's installed effect", async () => {
+  it("runs a field's check command on the brief and reports its output on failure", async () => {
     const { directory, store } = await initializedStore();
-    const repo = join(directory, "repo");
-    await fakeEffect(join(repo, "packages", "app"), "4.0.0");
-    await fakeEffect(join(repo, "packages", "legacy"), "4.0.0-beta.102");
-
-    const cited = (map: string, repoPath?: string) =>
-      effectBrief({ map: `EFFECT MAP   ${map}`, repo: repoPath });
-
-    await writeBrief(
-      directory,
-      "briefs/good.md",
-      cited("retry: Schedule.exponential (node_modules/effect/dist/Schedule.d.ts:2)", repo)
+    const checker = join(directory, "check.sh");
+    await writeFile(
+      checker,
+      '#!/bin/sh\ngrep -q "unvetted" "$1" && { echo "cites an unvetted dependency"; exit 3; }\nexit 0\n'
     );
-    expect(await store.briefs.check("briefs/good.md")).toEqual([]);
+    await chmod(checker, 0o755);
+    await store.briefs.require({ field: "DEPS", check: checker });
 
-    await writeBrief(
-      directory,
-      "briefs/bad.md",
-      cited(
-        "retry: dist/Schedule.d.ts:9; cache: dist/Cachez.d.ts:1; poll: dist/../package.json:1",
-        repo
-      )
-    );
-    const root = realpathSync(join(repo, "packages", "app", "node_modules", "effect"));
+    await writeBrief(directory, "briefs/ok.md", fieldBrief(["DEPS         lru-cache 11.0.0"]));
+    expect(await store.briefs.check("briefs/ok.md")).toEqual([]);
+    await writeBrief(directory, "briefs/bad.md", fieldBrief(["DEPS         unvetted left-pad"]));
     expect(await store.briefs.check("briefs/bad.md")).toEqual([
-      `EFFECT MAP cites dist/Schedule.d.ts:9, which does not resolve under ${root} (file has 3 lines)`,
-      `EFFECT MAP cites dist/Cachez.d.ts:1, which does not resolve under ${root} (no such file)`,
-      `EFFECT MAP cites dist/../package.json:1, which does not resolve under ${root} (path leaves dist)`,
+      `DEPS check failed (${checker}): cites an unvetted dependency`,
+    ]);
+    await writeBrief(directory, "briefs/absent.md", fieldBrief([]));
+    expect(await store.briefs.check("briefs/absent.md")).toEqual([
+      "missing DEPS (required by orch brief require)",
     ]);
 
-    await writeBrief(directory, "briefs/no-repo.md", cited("retry: dist/Schedule.d.ts:2"));
-    expect(await store.briefs.check("briefs/no-repo.md")).toEqual([
-      'EFFECT MAP cites dist paths but no repo is known; pass --repo <dir> or name "Repo <dir>" in the brief',
-    ]);
-    expect(
-      await store.briefs.check("briefs/no-repo.md", {
-        repo: join(repo, "packages", "app"),
-      })
-    ).toEqual([]);
-
-    await fakeEffect(join(repo, "packages", "other"), "4.0.1");
-    const problems = await store.briefs.check("briefs/good.md");
-    expect(problems.length).toBe(1);
-    expect(problems[0]).toStartWith(`ambiguous installed effect under ${repo}:`);
+    await store.briefs.require({ field: "DEPS", check: "" });
+    expect(await store.briefs.check("briefs/bad.md")).toEqual([]);
   });
 });
 
-describe("Effect lens on the ledger", () => {
-  async function effectUnitStore(): Promise<{
-    readonly directory: string;
-    readonly store: Store;
-  }> {
-    const { directory, store } = await storeWithGoal();
-    await writeBrief(directory, "briefs/fx.md", effectBrief());
-    await store.units.add({ id: "fx", track: "build", brief: "briefs/fx.md", serves: "G1" });
-    await store.units.add({ id: "plain", track: "build", brief: "briefs/u1.md", serves: "G1" });
-    return { directory, store };
-  }
-
+describe("Review lenses on the ledger", () => {
   const pass = { evidence: "reports/v.md", verifier: "sol" } as const;
 
-  it("records effect verdicts in their own vocabulary, keyed by lens", async () => {
+  it("records review-lens verdicts in their own vocabulary, keyed by lens", async () => {
     const { store } = await initializedStore();
     await expect(
-      store.ledger.record({ pr: 7, sha: "h1", verdict: "unit-test-verified", lens: "effect", ...pass })
-    ).rejects.toThrow("effect verdict must be idiomatic, fixes-required, or inconclusive");
+      store.ledger.record({ pr: 7, sha: "h1", verdict: "unit-test-verified", lens: "security", ...pass })
+    ).rejects.toThrow("security lens verdict must be pass, fixes-required, or inconclusive");
     await expect(
-      store.ledger.record({ pr: 7, sha: "h1", verdict: "idiomatic", ...pass })
+      store.ledger.record({ pr: 7, sha: "h1", verdict: "pass", ...pass })
     ).rejects.toThrow("verdict must be live-ui-verified");
+    await expect(
+      store.ledger.record({ pr: 7, sha: "h1", verdict: "pass", lens: "Security", ...pass })
+    ).rejects.toThrow("lens must be default or a lowercase review lens name");
 
     await store.ledger.record({ pr: 7, sha: "h1", verdict: "unit-test-verified", ...pass });
-    await store.ledger.record({ pr: 7, sha: "h1", verdict: "idiomatic", lens: "effect", ...pass });
+    await store.ledger.record({ pr: 7, sha: "h1", verdict: "pass", lens: "security", ...pass });
     expect((await store.ledger.check({ pr: 7, sha: "h1" })).verdict).toBe("unit-test-verified");
-    expect((await store.ledger.check({ pr: 7, sha: "h1", lens: "effect" })).verdict).toBe("idiomatic");
-    expect(await store.ledger.summary()).toEqual({ "unit-test-verified": 1, idiomatic: 1 });
+    expect((await store.ledger.check({ pr: 7, sha: "h1", lens: "security" })).verdict).toBe("pass");
+    expect(await store.ledger.summary()).toEqual({ "unit-test-verified": 1, pass: 1 });
   });
 
-  it("refuses to land an Effect unit with a missing, stale-head, or not-passing effect verdict", async () => {
-    const { store } = await effectUnitStore();
+  it("lands on the default verdict alone until a lens is required, then needs that lens at the head", async () => {
+    const { store } = await storeWithGoal();
+    await store.units.add({ id: "u", track: "build", brief: "briefs/u1.md", serves: "G1" });
+    await store.ledger.record({ pr: 7, sha: "new", verdict: "type-check-only", ...pass });
+    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "u" })).rejects.toThrow(
+      "unit u at new is not landable: default type-check-only (not a pass)"
+    );
     await store.ledger.record({ pr: 7, sha: "new", verdict: "unit-test-verified", ...pass });
-
-    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "fx" })).rejects.toThrow(
-      "unit fx at new is not landable: default unit-test-verified; effect missing"
-    );
-
-    await store.ledger.record({ pr: 7, sha: "old", verdict: "idiomatic", lens: "effect", ...pass });
-    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "fx" })).rejects.toThrow(
-      "unit fx at new is not landable: default unit-test-verified; effect missing"
-    );
-
-    await store.ledger.record({ pr: 7, sha: "new", verdict: "fixes-required", lens: "effect", ...pass });
-    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "fx" })).rejects.toThrow(
-      "unit fx at new is not landable: default unit-test-verified; effect fixes-required (not a pass)"
-    );
-
-    await store.ledger.record({ pr: 7, sha: "new", verdict: "idiomatic", lens: "effect", ...pass });
-    expect(await store.ledger.gate({ pr: 7, sha: "new", unit: "fx" })).toEqual({
-      unit: "fx",
+    expect(await store.ledger.gate({ pr: 7, sha: "new", unit: "u" })).toEqual({
+      unit: "u",
       sha: "new",
-      lenses: [
-        { lens: "default", verdict: "unit-test-verified" },
-        { lens: "effect", verdict: "idiomatic" },
-      ],
+      lenses: [{ lens: "default", verdict: "unit-test-verified" }],
     });
-  });
 
-  it("matches abbreviated ledger SHAs of seven or more characters against the full head", async () => {
-    const { store } = await effectUnitStore();
-    const head = "31d81ee0c1a2b3c4d5e6f708192a3b4c5d6e7f80";
-    await store.ledger.record({ pr: 9, sha: "31d81ee", verdict: "unit-test-verified", ...pass });
-    await store.ledger.record({ pr: 9, sha: "31d81ef", verdict: "idiomatic", lens: "effect", ...pass });
-    await expect(store.ledger.gate({ pr: 9, sha: head, unit: "fx" })).rejects.toThrow(
-      `unit fx at ${head} is not landable: default unit-test-verified; effect missing`
+    expect(await store.lenses.require("security")).toEqual(["security"]);
+    expect(await store.lenses.require("security")).toEqual(["security"]);
+    await expect(store.lenses.require("default")).rejects.toThrow("the default lens is always required");
+    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "u" })).rejects.toThrow(
+      "unit u at new is not landable: default unit-test-verified; security missing"
     );
-    await store.ledger.record({ pr: 9, sha: "31d81", verdict: "idiomatic", lens: "effect", ...pass });
-    await expect(store.ledger.gate({ pr: 9, sha: head, unit: "fx" })).rejects.toThrow("effect missing");
-    await store.ledger.record({ pr: 9, sha: "31d81ee0", verdict: "idiomatic", lens: "effect", ...pass });
-    expect((await store.ledger.gate({ pr: 9, sha: head, unit: "fx" })).lenses).toEqual([
+    await store.ledger.record({ pr: 7, sha: "old", verdict: "pass", lens: "security", ...pass });
+    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "u" })).rejects.toThrow("security missing");
+    await store.ledger.record({ pr: 7, sha: "new", verdict: "fixes-required", lens: "security", ...pass });
+    await expect(store.ledger.gate({ pr: 7, sha: "new", unit: "u" })).rejects.toThrow(
+      "unit u at new is not landable: default unit-test-verified; security fixes-required (not a pass)"
+    );
+    await store.ledger.record({ pr: 7, sha: "new", verdict: "pass", lens: "security", ...pass });
+    expect((await store.ledger.gate({ pr: 7, sha: "new", unit: "u" })).lenses).toEqual([
       { lens: "default", verdict: "unit-test-verified" },
-      { lens: "effect", verdict: "idiomatic" },
+      { lens: "security", verdict: "pass" },
     ]);
   });
 
-  it("lands a non-Effect unit on a passing default verdict alone", async () => {
-    const { store } = await effectUnitStore();
-    await store.ledger.record({ pr: 8, sha: "s", verdict: "type-check-only", ...pass });
-    await expect(store.ledger.gate({ pr: 8, sha: "s", unit: "plain" })).rejects.toThrow(
-      "unit plain at s is not landable: default type-check-only (not a pass)"
-    );
-    await store.ledger.record({ pr: 8, sha: "s", verdict: "live-ui-verified", ...pass });
-    expect(await store.ledger.gate({ pr: 8, sha: "s", unit: "plain" })).toEqual({
-      unit: "plain",
-      sha: "s",
-      lenses: [{ lens: "default", verdict: "live-ui-verified" }],
-    });
+  it("matches abbreviated ledger SHAs of seven or more characters against the full head", async () => {
+    const { store } = await storeWithGoal();
+    await store.units.add({ id: "u", track: "build", brief: "briefs/u1.md", serves: "G1" });
+    await store.lenses.require("security");
+    const head = "31d81ee0c1a2b3c4d5e6f708192a3b4c5d6e7f80";
+    await store.ledger.record({ pr: 9, sha: "31d81ee", verdict: "unit-test-verified", ...pass });
+    await store.ledger.record({ pr: 9, sha: "31d81ef", verdict: "pass", lens: "security", ...pass });
+    await expect(store.ledger.gate({ pr: 9, sha: head, unit: "u" })).rejects.toThrow("security missing");
+    await store.ledger.record({ pr: 9, sha: "31d81", verdict: "pass", lens: "security", ...pass });
+    await expect(store.ledger.gate({ pr: 9, sha: head, unit: "u" })).rejects.toThrow("security missing");
+    await store.ledger.record({ pr: 9, sha: "31d81ee0", verdict: "pass", lens: "security", ...pass });
+    expect((await store.ledger.gate({ pr: 9, sha: head, unit: "u" })).lenses).toEqual([
+      { lens: "default", verdict: "unit-test-verified" },
+      { lens: "security", verdict: "pass" },
+    ]);
   });
 
-  it("reads a six-column ledger as the default lens and upgrades it on write", async () => {
+  it("reads six-column ledgers as the default lens and legacy idiomatic rows as a pass", async () => {
     const { directory, store } = await initializedStore();
     await writeFile(
       join(directory, "ledger.tsv"),
       "pr\tsha\tverdict\tevidence\tverifier\tts\n2\tsha2\tunit-test-verified\treport\tme\tnow\n"
     );
     expect((await store.ledger.check({ pr: 2, sha: "sha2" })).lens).toBe("default");
-    await store.ledger.record({ pr: 2, sha: "sha2", verdict: "idiomatic", lens: "effect", ...pass });
+    await store.ledger.record({ pr: 2, sha: "sha2", verdict: "pass", lens: "security", ...pass });
     const lines = (await readFile(join(directory, "ledger.tsv"), "utf8")).split("\n");
     expect(lines[0]).toBe("pr\tsha\tverdict\tevidence\tverifier\tts\tlens");
     expect(lines[1]).toBe("2\tsha2\tunit-test-verified\treport\tme\tnow\tdefault");
-    expect(lines[2]?.split("\t").slice(0, 3)).toEqual(["2", "sha2", "idiomatic"]);
-    expect(lines[2]?.endsWith("\teffect")).toBe(true);
+    expect(lines[2]?.endsWith("\tsecurity")).toBe(true);
+
+    await writeFile(
+      join(directory, "ledger.tsv"),
+      "pr\tsha\tverdict\tevidence\tverifier\tts\tlens\n3\th\tidiomatic\tr\tme\tnow\treview\n"
+    );
+    expect((await store.ledger.check({ pr: 3, sha: "h", lens: "review" })).verdict).toBe("pass");
   });
 
-  it("gates landing from the CLI with --lens and --unit", async () => {
-    const { directory, store } = await effectUnitStore();
+  it("gates landing from the CLI with lens require, --lens, and --unit", async () => {
+    const { directory, store } = await storeWithGoal();
+    await store.units.add({ id: "u", track: "build", brief: "briefs/u1.md", serves: "G1" });
     await store.close();
     const cli = (...args: string[]) => runCli(["--store", directory, ...args]);
 
+    expect(cli("lens", "require", "security").stdout).toBe("default\nsecurity\n");
+    expect(cli("lens", "list").stdout).toBe("default\nsecurity\n");
     expect(cli("ledger", "record", "7", "h", "unit-test-verified", "--evidence", "r").code).toBe(0);
-    const missing = cli("ledger", "check", "7", "h", "--unit", "fx");
+    const missing = cli("ledger", "check", "7", "h", "--unit", "u");
     expect(missing.code).toBe(1);
     expect(missing.stderr).toBe(
-      "error: unit fx at h is not landable: default unit-test-verified; effect missing\n"
+      "error: unit u at h is not landable: default unit-test-verified; security missing\n"
     );
-
     expect(
-      cli("ledger", "record", "7", "h", "idiomatic", "--lens", "effect", "--evidence", "r").stdout
-    ).toBe("7\th\tidiomatic\teffect\n");
-    const landable = cli("ledger", "check", "7", "h", "--unit", "fx");
+      cli("ledger", "record", "7", "h", "pass", "--lens", "security", "--evidence", "r").stdout
+    ).toBe("7\th\tpass\tsecurity\n");
+    const landable = cli("ledger", "check", "7", "h", "--unit", "u");
     expect(landable.code).toBe(0);
-    expect(landable.stdout).toBe("default\tunit-test-verified\neffect\tidiomatic\n");
-    expect(cli("ledger", "check", "7", "h", "--lens", "effect").stdout).toBe("idiomatic\n");
-    expect(cli("ledger", "check", "7", "h", "--lens", "style").code).toBe(1);
+    expect(landable.stdout).toBe("default\tunit-test-verified\nsecurity\tpass\n");
+    expect(cli("ledger", "check", "7", "h", "--lens", "security").stdout).toBe("pass\n");
+    expect(cli("ledger", "check", "7", "h", "--lens", "style").code).toBe(2);
+
+    expect(cli("brief", "require", "THREAT MODEL").stdout).toBe("THREAT MODEL\t\n");
+    expect(cli("brief", "fields").stdout).toBe("THREAT MODEL\t\n");
   });
 });

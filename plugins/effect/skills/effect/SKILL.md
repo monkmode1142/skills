@@ -542,3 +542,4 @@ Each is a self-contained deep dive; load the one the task needs.
 | `references/testing.md` | writing or fixing tests: `@effect/vitest` surface, asserting failures and defects, layers and fakes, `TestClock`, concurrency tests, property tests, false greens |
 | `references/review.md` | reviewing or auditing Effect code, sweeping for smells, configuring the Effect language service, or self-reviewing a large change |
 | `references/migration.md` | upgrading v3 → v4.0.0 or an RC/beta → 4.0.0, or vendoring Effect's source for agents |
+| `references/pstack.md` | you work under pstack (poteto-mode) with the effect stack add-on: the version gate, done checklist, delegate lines, test rules, review lens, and reflection counts at each pstack step |

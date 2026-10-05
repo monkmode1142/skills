@@ -38,13 +38,13 @@ Inside bb, collect child runners from their lifecycle notifications or `bb threa
 
 Each rationale names the alternatives the candidate considered and what it rejected.
 
-When candidates write Effect code, each brief carries the two lines from [effect.md](../poteto-mode/references/effect.md) (Delegating Effect work) verbatim. A cross-family runner that cannot load skills gets the effect skill's path instead.
+When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, each brief carries its delegate lines verbatim. A cross-family runner that cannot load skills gets the add-on skill's path instead.
 
 If a candidate fails to produce output, proceed with N-1 and note the dropout in the synthesis record.
 
 ## Phase C: Cross-judge
 
-After all Phase B candidates complete, choose one model from the `arena cross-judge pool` role in `~/.agents/pstack/models.md`. If the file or that role is missing, choose from `opus` and `codex`. Prefer a different model family from the parent's when one is reachable (see harness.md). Run one read-only judge on that model through its seat runner (harness.md, Running a seat). Its brief says it is read-only, and its output (stdout, or `bb thread output <id>` for a bb seat) is the verdict. If no other family is reachable, judge on the same family with a fresh context and say so. Treat its agreement as weaker evidence. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. For Effect candidates, its brief adds "Use the effect skill's `references/review.md` procedure". It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Don't spawn the judge while candidates are still writing.
+After all Phase B candidates complete, choose one model from the `arena cross-judge pool` role in `~/.agents/pstack/models.md`. If the file or that role is missing, choose from `opus` and `codex`. Prefer a different model family from the parent's when one is reachable (see harness.md). Run one read-only judge on that model through its seat runner (harness.md, Running a seat). Its brief says it is read-only, and its output (stdout, or `bb thread output <id>` for a bb seat) is the verdict. If no other family is reachable, judge on the same family with a fresh context and say so. Treat its agreement as weaker evidence. It sees the rubric and the candidates by path label, scores each criterion, and recommends a base with rationale. When a stack add-on applies, its brief adds the add-on's review lens. It runs in parallel with the parent's reading in Phase D, not with the candidates themselves. Don't spawn the judge while candidates are still writing.
 
 ## Phase D: Pick a base
 
@@ -68,7 +68,7 @@ When N candidates converge on the same shape, that is a strong agreement signal.
 
 ## Phase F: Verify
 
-The synthesized artifact has to hold up under the same scrutiny as any other output, per the **principle-prove-it-works** skill. Grafting can mix Effect versions or idioms across candidates, so a synthesized Effect artifact also passes the effect skill's SKILL §8 checklist.
+The synthesized artifact has to hold up under the same scrutiny as any other output, per the **principle-prove-it-works** skill. Grafting can mix library versions or idioms across candidates, so when a stack add-on applies, the synthesized artifact also passes its done checklist.
 
 If verification surfaces a problem the arena did not catch, either Phase A was wrong (re-frame and re-run) or one candidate caught it and you missed the graft (go back to Phase E). Don't paper over.
 

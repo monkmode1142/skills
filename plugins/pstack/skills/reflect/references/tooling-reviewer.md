@@ -18,12 +18,9 @@ Examples of the pattern:
 - User describes a flaky test the agent could have queried via an observability MCP. Routing: the debugging skill should mention the observability MCP.
 - User links a chat thread the agent could have fetched via a chat MCP. Routing: the relevant skill should mention the chat MCP.
 
-## Lens addition: Effect toolbox use
+## Lens addition: stack add-on counts
 
-For each unit in the transcript that wrote Effect code, report three counts before any finding:
-- Count deltas. The diagnostics and lint count lines (per-rule counts, `Effect.run*`-in-tests debt) at the unit's start and end, as printed by the project's check. A count that rose is a finding.
-- Toolbox loads. How many times the agent opened the effect skill's `references/primitives.md`, `modules.md` and `testing.md`. Zero loads on a unit that hand-rolled time, retry, polling, caching, parsing or test runners is a missed load. Route it to the pstack step that should have opened the file (**poteto-mode** `references/effect.md`).
-- Effect lens. Whether the unit landed with an `effect` ledger verdict from the other family for its head SHA.
+When a stack add-on applied to the session (**poteto-mode** `references/harness.md`, Stack add-ons), report the counts its Reflection section names before any finding.
 
 A correction the user or a verifier made twice (same hand-roll, same false green, same runner) is not a text finding. Route it as `lint: <rule>` to the project's lint or the language-service severity map, with the seeded violation that must fail.
 
@@ -31,7 +28,7 @@ Read the active transcript at <ABSOLUTE_PATH> (or use the digest below if no pat
 
 Scan for:
 - Tool invocations and command flags the agent had to discover
-- Library / framework quirks (config, lockfiles, env-var behavior, version-specific gotchas). Check an Effect quirk against the effect skill first (`references/v4-catalog.md` §5 and the `references/review.md` catalogs). A quirk it documents is a missed load, so route it to the pstack step that should have opened that section per the **poteto-mode** skill's `references/effect.md`. A quirk it lacks routes to the effect skill's matching reference.
+- Library / framework quirks (config, lockfiles, env-var behavior, version-specific gotchas). Check a quirk in a stack an add-on covers against the add-on skill first. A quirk it documents is a missed load, so route it to the pstack step that should have opened that section. A quirk it lacks routes to the add-on skill's matching reference.
 - File or path conventions that aren't obvious from a glance at the code
 - Test commands, CI flags, and how to reproduce a failing run locally
 - Debugging entry points: how to capture a trace, where logs land, which RPC to hit

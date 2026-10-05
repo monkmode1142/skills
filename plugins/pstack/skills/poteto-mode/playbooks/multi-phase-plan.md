@@ -59,7 +59,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 - [ ] Open the PR ready, never draft, per **Opening a PR**. Use the run's built-in PR tool when it has one, else `gh pr create --base <base-branch>`. A stack child targets its parent branch.
 - [ ] Run the repo's lint and typecheck once before the PR-facing push. Push with hooks on.
 - [ ] Self-review the diff for slop before each commit. Run `/no-comments` before review.
-- [ ] For a PR that touches Effect code, brief its owner with the two lines from `~/.agents/skills/poteto-mode/references/effect.md` (Delegating Effect work) verbatim, and run the effect skill's SKILL §8 checklist before the code-ready report.
+- [ ] When a stack add-on applies to a PR (`~/.agents/skills/poteto-mode/references/harness.md`, Stack add-ons), brief its owner with the add-on's delegate lines verbatim, and run the add-on's done checklist before the code-ready report.
 - [ ] Triage every review-bot and security-reviewer comment per `../references/review-bot-triage.md`.
 - [ ] Rebase onto current trunk before the code-ready report and babysit. Keep that merge base in fix rounds. Rebase again only at merge prep, on a `git merge-tree` conflict with trunk, or on a CI failure that comes from a change on trunk.
 

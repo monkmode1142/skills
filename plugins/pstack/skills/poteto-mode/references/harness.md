@@ -59,11 +59,18 @@ A role value names how to run one seat. Resolve each entry in a role list on its
 
 An entry that is not reachable (CLI not on PATH, `bb:` outside bb, a model the harness rejects) is dropped. A panel that loses its last cross-family seat says it ran single-family and treats agreement as weaker evidence.
 
-## Stack defaults
+## Stack add-ons
 
-Non-frontend TypeScript (services, CLIs, scripts, infra, workers, tests for those) is written in Effect v4. `references/effect.md` maps every pstack step to the part of the **effect** skill it opens, and holds the version gate, the done gate, and the brief lines for delegates. For a new service module, also load **effect-service-design** when it is installed. Frontend UI code (React components, styling) is plain TypeScript unless the project already uses Effect there.
+pstack is language-neutral. A stack add-on is a skill that owns a language or framework's idioms, plus a pstack reference inside it that says how the stack plugs into each step below. An always-applied rule turns one on, for example "Stack add-on: effect, for non-frontend TypeScript. Follow the effect skill's `references/pstack.md`." Read that reference once per session before the first step it touches. With no add-on, follow the project's own conventions, and project rules beat an add-on.
 
-Project rules beat these defaults. Read the project's `AGENTS.md` or `CLAUDE.md` before acting.
+An add-on can define, per step:
+
+- **Code.** Which code it covers, the skill to load before writing it, a version gate to run first, and a done checklist to run before the reply.
+- **Design.** What the architect sketch shows for that stack.
+- **Delegation.** Lines every delegate brief carries verbatim. Under Orchestrate they go in `preferences.md`, so the STANDING check enforces them. An extra brief field registers with `orch brief require <FIELD> [--check <command>]`.
+- **Tests.** The runner and conventions pstack-tdd uses.
+- **Review.** A review lens with its own procedure. Under Orchestrate, `orch lens require <name>` makes landing need that lens's `pass` verdict at the unit's head SHA.
+- **Reflection.** What reflect counts for the stack.
 
 ## Inside bb
 

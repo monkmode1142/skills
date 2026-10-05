@@ -12,7 +12,7 @@ Classify each review-bot thread before acting:
 
 When in doubt, ask. Skipping a noisy code-quality comment is cheap; skipping a real data or security bug is not.
 
-For a comment on Effect code, check the claim with the effect skill's `references/review.md` before you classify it. Run its version and evidence gates, match the claim to smell catalog A or B or the false-greens list, and cite the installed `.d.ts` or `src` in the reply. Bots review Effect from v3-shaped memory, so the finding can be real while the suggested fix is a removed API.
+For a comment on code a stack add-on covers, check the claim with the add-on's review lens before you classify it (`harness.md`, Stack add-ons).
 
 ## Learned pattern format
 
@@ -74,13 +74,13 @@ Use `candidate` for one or two examples. Use `recurring` after multiple real dis
 - Do not skip when: The only evidence is a human saying "false positive" on a high-risk issue without explanation.
 - Example signal: A file-naming rule comment whose body says the file is already compliant.
 
-### Effect advice written for another version
+### Library advice written for another version
 
 - Confidence: candidate
-- Skip when: The suggested Effect API does not exist at the installed version, checked per the effect skill's `references/review.md` evidence gate, and the underlying concern is already handled. Typical shapes are `Effect.catchAll`, `Either`, `Context.Tag`, `Effect.Service`, `Layer.scoped`, `Effect.fork`, or an `effect/unstable/*` import in a 4.0.0 repo.
-- Do not skip when: The comment names a real smell from that file's catalogs, such as a floating effect, a runner inside library code, a `try/catch` around `yield*`, an unjoined fork, or a test false green. Fix it with the 4.0.0 form instead of the bot's form.
-- Example signal: "use `Effect.catchAll` to handle errors", "return an `Either`", "wrap the resource in `Layer.scoped`".
-- Source: seeded from the effect skill's review procedure at 4.0.0. Not yet confirmed on a PR.
+- Skip when: The suggested API does not exist at the library version the repo installs, checked against the installed type declarations or source, and the underlying concern is already handled.
+- Do not skip when: The comment names a real defect behind the outdated suggestion, such as an unawaited call or a leaked resource. Fix it with the installed version's form instead of the bot's form.
+- Example signal: A suggestion to call an API the installed major version renamed or removed.
+- Source: seeded from a stack add-on's review procedure. Not yet confirmed on a PR.
 
 ## Ask by default
 

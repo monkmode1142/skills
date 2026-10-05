@@ -2,7 +2,7 @@
 
 **You own the diagnosis from the artifact. Load it, shape it, narrow to the cause, attribute to source.**
 
-Distinct from **Runtime forensics**, which instruments the live process. Here the capture already exists. The artifact is a fixed dataset, read it, don't re-run it. Keep tooling generic so the playbook stays portable: a DevTools or trace parser for cpuprofile and `.json.gz`, a text editor for a spindump, your heap tooling for a heapsnapshot, an OTLP or span-export JSON for a traced service. An Effect program's span export already names its frames, because each `Effect.fn("Service.method")` span carries the service and method. Load the **effect** skill before reading its tracing output. Its `references/platform.md` §14 explains the span and metric export, and its `references/errors.md` §6 reads a failed span's `Cause`.
+Distinct from **Runtime forensics**, which instruments the live process. Here the capture already exists. The artifact is a fixed dataset, read it, don't re-run it. Keep tooling generic so the playbook stays portable: a DevTools or trace parser for cpuprofile and `.json.gz`, a text editor for a spindump, your heap tooling for a heapsnapshot, an OTLP or span-export JSON for a traced service. When a stack add-on applies (`../references/harness.md`, Stack add-ons), load its skill before reading the stack's tracing output.
 
 1. Identify the format and load it with the right tool. Parse large artifacts in a subagent (the **principle-guard-the-context-window** skill) and keep the reduced finding in the main thread.
 2. Transform the raw artifact into a form you can query. Dump the trace or heap snapshot into sqlite, one row per sample, frame, or node. Reach the queryable shape before you read.

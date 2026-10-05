@@ -17,7 +17,7 @@ First, read recent commits, reverts, review comments, agent instruction files, a
 ## Fix each class at the highest level that works
 
 1. **Eliminate it with architecture.** Give each piece of state one owner and each task one supported way. Hide internals so the wrong import fails. Replace hand-synced lists with one source of truth. Delete old ways and dead code an agent would copy. The **architect** skill's `references/design-red-flags.md` names these shapes.
-2. **Enforce it with types so the bad state can't be written.** If bad code still compiles, add a lint or CI check whose error names the file, type, or function to use instead. If the pattern is already common, fail only when a change adds more. In Effect code, the type level is a Schema, a brand, or a tagged error in `E`. The lint level is the Effect language service diagnostics, then oxlint or ast-grep rules, per the **effect** skill's `references/review.md` ("Language-service diagnostics" and "Other enforcement").
+2. **Enforce it with types so the bad state can't be written.** If bad code still compiles, add a lint or CI check whose error names the file, type, or function to use instead. If the pattern is already common, fail only when a change adds more. When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, use the type and lint forms it names.
 3. **Test the behavior.** Fix or delete any test that would still pass if every function it calls returned nothing (the **principle-test-behavior-not-implementation** skill).
 4. **Write docs or agent rules last, only for judgment calls.** Nothing fails when an agent skips them.
 

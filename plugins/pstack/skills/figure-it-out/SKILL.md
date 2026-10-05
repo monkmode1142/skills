@@ -29,7 +29,7 @@ Decompose into atomic, independently-landable units. Sequence riskiest-unknown-f
 - Build the verification harness before the work, with the baseline captured from the pre-change state, so the check reads as "old value vs new value".
 - For one-way-door design decisions, run the **architect** skill (it runs **arena**). Skip it for mechanical work whose shape is already concrete. A second arena over a settled design is over-engineering (the **principle-laziness-protocol** skill).
 - Decide what fans out. Parallelize only across seams, and give each worker its own worktree or branch (the **principle-separate-before-serializing-shared-state** skill). Don't over-fan.
-- In an Effect codebase, the first phase runs the effect skill's SKILL §1 version gate, and a version migration follows the procedure in its `references/migration.md`. [effect.md](../poteto-mode/references/effect.md) maps the remaining phases to effect skill sections.
+- When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, the first phase runs its version gate, and the add-on maps the remaining phases.
 - Write the designed phase list down. That list is what the human reviews.
 
 Then execute the design. Add its steps to the todolist as concrete items, after the Phase C entry and before Phase D. Run each under the Phase C loop discipline, and weave the Phase D log through them, a row as each step lands, rather than saving the whole trail for the end.
@@ -40,7 +40,7 @@ Each unit is an experiment. State the hypothesis, make the smallest change, meas
 Apply the **principle-sequence-verifiable-units** skill, verifying each unit before starting the next instead of batching checks at the end.
 
 - Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
-- Pair delegated work with a judge. A worker that writes Effect code gets the two brief lines from [effect.md](../poteto-mode/references/effect.md) (Delegating Effect work) verbatim. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
+- Pair delegated work with a judge. When a stack add-on applies, a worker gets its delegate lines verbatim. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
 - A verdict is VERIFIED, NOT VERIFIED, or INCONCLUSIVE. Inconclusive is not a pass. Don't hide a negative.
 
 ## Phase D: Keep the audit trail
@@ -49,6 +49,6 @@ Log the run via the **show-me-your-work** skill. figure-it-out's work is usually
 
 ## Phase E: Verify and hand back
 
-Check the whole against the Phase A predicate on the real product, not just the harness. For work that touches Effect code, run the effect skill's SKILL §8 checklist over the whole change too. Encode any recurring correction as a gate, a lint rule, a check, or a script (the **principle-encode-lessons-in-structure** skill).
+Check the whole against the Phase A predicate on the real product, not just the harness. When a stack add-on applies, run its done checklist over the whole change too. Encode any recurring correction as a gate, a lint rule, a check, or a script (the **principle-encode-lessons-in-structure** skill).
 
 **Reply:** the playbook you designed, the rigor level and why, the decision-trail path, what's verified against the predicate, and what's still open.

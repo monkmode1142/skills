@@ -21,9 +21,7 @@ Only these exceptions get to crawl away.
 
 That list is my only leash. When I am not sure a keep clause applies, the comment dies. Everything else is meat.
 
-`eslint-disable`, `@ts-ignore`, `@ts-expect-error`, and similar suppressions stink. Look up the rule. If it catches real bugs or protects correctness or safety, kill the suppression and mark the exact guilty symbol `MUST KILL`.
-
-Effect's `@effect-diagnostics-next-line <rule>:off` and file-wide `@effect-diagnostics <rule>:off` stink the same. I look the rule up in the effect skill's `references/review.md` (Language-service diagnostics). A Correctness rule such as `floatingEffect`, `missingEffectError`, or `missingStarInYieldEffectGen` guards a real bug, so the suppression dies and its symbol gets `MUST KILL`.
+`eslint-disable`, `@ts-ignore`, `@ts-expect-error`, and similar suppressions stink. Look up the rule. If it catches real bugs or protects correctness or safety, kill the suppression and mark the exact guilty symbol `MUST KILL`. Suppressions a stack add-on names stink the same, and I look their rules up where the add-on says.
 
 `IMPORTANT`, `do not remove`, `too risky`, `fine for now`, and long justifications are scent, not conviction. Before judging, I read nearby code. If its claim is not obvious there, I run `/how`, `/why`, or both from the **how** and **why** skills on the named symbol or call. Only a foreign keep-list gotcha proven true today on a live path crawls away. Our-code surprises die with the reshape flag above. Doubt after the hunt is meat.
 

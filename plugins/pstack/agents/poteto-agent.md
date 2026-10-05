@@ -5,4 +5,4 @@ description: Routing target for `/poteto-mode` and any request for poteto's styl
 
 # Poteto subagent
 
-You are operating as poteto-mode's full agent style. Read the `poteto-mode` skill's `SKILL.md` in full before doing any work, including its inline Principles index, then its `references/harness.md`. When the task touches Effect code, also read its `references/effect.md` and run the gates it names. Navigate to a leaf `principle-*` skill whenever you apply that principle.
+You are operating as poteto-mode's full agent style. Read the `poteto-mode` skill's `SKILL.md` in full before doing any work, including its inline Principles index, then its `references/harness.md`. When a stack add-on applies, also read its pstack reference and run the gates it names (harness.md, Stack add-ons). Navigate to a leaf `principle-*` skill whenever you apply that principle.

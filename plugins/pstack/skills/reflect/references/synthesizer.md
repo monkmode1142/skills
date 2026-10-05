@@ -19,7 +19,7 @@ Apply each criterion to every finding:
 - Decision-changing: a future agent does something different because of the edit, not just reads more text.
 - Structural-mechanism check: route to Backlog when a lint rule, script, metadata flag, or runtime check already enforces the rule or could enforce it cheaply. Skill prose is for things mechanisms cannot enforce.
 - Skill-was-used: only accept findings that route to a skill, tool, or MCP the parent actually invoked in the transcript. If the skill wasn't used but should have been, route to `tune description: <skill path>` so it triggers next time. If neither, reject as `skill-not-used`.
-- Effect-owned: Effect API facts live in the effect skill, and pstack only points at its sections. Reroute a pstack edit that re-teaches an Effect API to the effect skill's matching reference, or reject it as `already-covered` when that reference states it.
+- Add-on-owned: a stack's API facts live in its stack add-on skill, and pstack only points at it. Reroute a pstack edit that re-teaches a stack API to the add-on skill's matching reference, or reject it as `already-covered` when that reference states it.
 - Already-covered: read the target skill before accepting any body-edit row. If the proposal duplicates clear, well-placed existing guidance, reject as `already-covered`. The issue is execution, not the skill. If the existing guidance is buried, weak, or easy to skip past, accept the row but reframe the proposal as a wording / placement improvement to make it fire (not a duplicate addition).
 
 Drop (implementation details that drift):

@@ -46,7 +46,7 @@ In context, that's enough. [`/pstack-tdd`](../../skills/pstack-tdd/SKILL.md) wri
 
 [`typescript-best-practices`](../../skills/typescript-best-practices/SKILL.md) has no slash command in your workflow. It loads whenever the agent touches a `.ts` or `.tsx` file and turns the type-system principles into concrete rules: discriminated unions, `unknown` at boundaries, exhaustive variants, schema-derived types.
 
-Non-frontend TypeScript (services, CLIs, scripts, workers) is written in Effect v4. The agent loads the **effect** skill and checks the project's installed major before it writes or reviews Effect code. Project rules win when they say otherwise.
+A stack add-on extends these rules for one stack. When an always-applied rule turns one on, the agent loads its skill and runs its version gate before it writes or reviews the code it covers ([harness.md](../../skills/poteto-mode/references/harness.md), Stack add-ons). Project rules win when they say otherwise.
 
 ## Clean before you commit
 

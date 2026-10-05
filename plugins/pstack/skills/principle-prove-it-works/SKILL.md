@@ -15,9 +15,7 @@ Check the real thing, not a proxy:
 - Read the actual value, not a cached or derived representation
 - When verification fails, suspect the observation method before suspecting the system
 
-In Effect code, tests over `Layer.succeed` stubs and `TestClock` prove the logic, not the running system. They are a proxy for it. After they pass, run the real composition root (the `NodeRuntime.runMain` entry, `Layer.launch`, or the `ManagedRuntime` bridge) against the real services, then read the actual output, the row it wrote, or the `Effect.fn` span in the trace.
-
-For any change that touches Effect code, the **effect** skill's SKILL §8 "Before you call it done" checklist is part of done. Run every box before the reply. That covers the version gate, every API checked against the installed `.d.ts` or source, the typecheck, tests that can fail, and language-service diagnostics where the project has them. Name each box that fails instead of skipping it. `references/review.md` holds the full audit for a large change.
+When a [stack add-on](../poteto-mode/references/harness.md#stack-add-ons) applies, its done checklist is part of done. Run every box before the reply, and name each box that fails instead of skipping it.
 
 ## Script the check when you can
 

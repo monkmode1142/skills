@@ -16,7 +16,7 @@ Design operations so they converge to the correct state regardless of how many t
 - Self-healing locks: use PID-based stale lock detection
 - Idempotent scheduling: failed work respawns cleanly, fresh input regenerated after each cycle
 
-**Retries assume idempotence.** A retry reruns the whole operation from the top. In Effect, `Effect.retry` with a `Schedule` makes retrying one line, which is why the check matters. Put a retry only around an operation that passes the test below, or make it idempotent first with an idempotency key, an upsert, or a compare-and-set. Retrying a non-idempotent write turns a transient failure into a duplicate. `HttpClient.retryTransient` does not look at the method, so give writes their own client without it. Bound every retry by attempts and time. `Schedule.recurs(n)` and `{ times: n }` mean n retries, so n + 1 runs. Tie cleanup to `Effect.acquireRelease` so a crash or interruption mid-run still releases what it took. Open the **effect** skill's `references/concurrency.md` §7 for `Schedule` and retry forms, and §8 for timeouts.
+**Retries assume idempotence.** A retry reruns the whole operation from the top. Put a retry only around an operation that passes the test below, or make it idempotent first with an idempotency key, an upsert, or a compare-and-set. Retrying a non-idempotent write turns a transient failure into a duplicate. Bound every retry by attempts and time. Tie cleanup to the resource's release so a crash or interruption mid-run still releases what it took.
 
 **The test:**
 1. What happens if this runs twice in a row?

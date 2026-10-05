@@ -32,8 +32,6 @@ const {
 type Command = InstanceType<typeof CommanderCommand>;
 
 const DISPLAY_LIMIT = 4;
-const REPO_HELP =
-  "directory whose installed effect resolves EFFECT MAP dist citations (default: the brief's Repo line)";
 
 interface Io {
   readonly stdout: (value: string) => void;
@@ -51,11 +49,10 @@ interface UnitAddOptions {
   readonly brief: string;
   readonly serves: string;
   readonly reason?: string;
-  readonly repo?: string;
 }
 
-interface BriefCheckCliOptions {
-  readonly repo?: string;
+interface BriefRequireOptions {
+  readonly check?: string;
 }
 
 interface GoalAddOptions {
@@ -332,7 +329,6 @@ function createProgram(io: Io): Command {
     )
     .requiredOption("--serves <goal>", "goal id from goals.tsv, or none")
     .option("--reason <text>", "why an off-goal unit (--serves none) earns a slot")
-    .option("--repo <dir>", REPO_HELP)
     .action((id: string, options: UnitAddOptions) =>
       runStore(
         program,
@@ -344,7 +340,6 @@ function createProgram(io: Io): Command {
             brief: options.brief,
             serves: options.serves,
             reason: options.reason,
-            repo: options.repo,
           }),
         unitLine
       )
@@ -426,14 +421,13 @@ function createProgram(io: Io): Command {
     .command("brief")
     .description("validate briefs before spawning")
     .action(() => requireSubcommand(program));
-  leaf(brief, "check <path>", "fail unless the brief is spawnable")
-    .option("--repo <dir>", REPO_HELP)
-    .action((path: string, options: BriefCheckCliOptions) =>
+  leaf(brief, "check <path>", "fail unless the brief is spawnable").action(
+    (path: string) =>
       runStore(
         program,
         io,
         async (store) => {
-          const problems = await store.briefs.check(path, { repo: options.repo });
+          const problems = await store.briefs.check(path);
           if (problems.length > 0) {
             throw new UserError(
               `brief ${path} is not spawnable:\n${problems.map((problem) => `- ${problem}`).join("\n")}`
@@ -443,7 +437,51 @@ function createProgram(io: Io): Command {
         },
         () => "ok"
       )
+  );
+  leaf(brief, "require <field>", "require an extra brief field in every brief")
+    .option(
+      "--check <command>",
+      "command run with the brief path appended; a nonzero exit fails the brief"
+    )
+    .action((field: string, options: BriefRequireOptions) =>
+      runStore(
+        program,
+        io,
+        (store) => store.briefs.require({ field, check: options.check ?? "" }),
+        (row) => `${row.field}\t${row.check}`
+      )
     );
+  leaf(brief, "fields", "list the extra brief fields this program requires").action(() =>
+    runStore(
+      program,
+      io,
+      (store) => store.briefs.fields(),
+      (rows) =>
+        compactRows(rows, (row) => `${row.field}\t${row.check}`, "(no extra fields)", null)
+    )
+  );
+
+  const lens = program
+    .command("lens")
+    .description("manage the review lenses landing requires")
+    .action(() => requireSubcommand(program));
+  leaf(lens, "require <name>", "require a passing verdict on this lens to land").action(
+    (name: string) =>
+      runStore(
+        program,
+        io,
+        (store) => store.lenses.require(name),
+        (rows) => ["default", ...rows].join("\n")
+      )
+  );
+  leaf(lens, "list", "list the lenses landing requires").action(() =>
+    runStore(
+      program,
+      io,
+      (store) => store.lenses.list(),
+      (rows) => ["default", ...rows].join("\n")
+    )
+  );
 
   const ledger = program
     .command("ledger")
@@ -454,11 +492,11 @@ function createProgram(io: Io): Command {
     .argument("<sha>", "commit SHA")
     .argument(
       "<verdict>",
-      "default lens: live-ui-verified | unit-test-verified | type-check-only | verifier-blocked | verifier-failed; effect lens: idiomatic | fixes-required | inconclusive"
+      "default lens: live-ui-verified | unit-test-verified | type-check-only | verifier-blocked | verifier-failed; other lenses: pass | fixes-required | inconclusive"
     )
     .requiredOption("--evidence <path>", "evidence path")
     .option("--verifier <name>", "verifier name")
-    .option("--lens <lens>", "default or effect", lensArgument, "default")
+    .option("--lens <lens>", "default, or a review lens name", lensArgument, "default")
     .action(
       (
         pr: number,
@@ -484,11 +522,11 @@ function createProgram(io: Io): Command {
   leaf(ledger, "check", "check a verdict, or with --unit whether the unit may land")
     .argument("<pr>", "pull request number", positiveInteger)
     .argument("<sha>", "commit SHA")
-    .option("--lens <lens>", "default or effect", lensArgument)
+    .option("--lens <lens>", "default, or a review lens name", lensArgument)
     .addOption(
       new Option(
         "--unit <id>",
-        "require a passing verdict on every lens the unit needs (effect too for Effect briefs)"
+        "require a passing verdict on the default lens and every lens from orch lens require"
       ).conflicts("lens")
     )
     .action((pr: number, sha: string, options: LedgerCheckOptions) => {

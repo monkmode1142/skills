@@ -30,7 +30,7 @@ You are reviewing whether the code achieves this intent well. Do NOT question th
 
 Review the code through every lens in the rubric and the code-quality lens above that you find relevant. Do not force lenses that don't apply. A simple bug fix does not need paragraphs about architectural integrity.
 
-If the code imports `effect` or `@effect/*`, use the effect skill's `references/review.md` procedure (`~/.agents/skills/effect/references/review.md`, readable as plain Markdown when you cannot load skills). Judge against the installed `effect` version given with the code, not your memory. Map its tiers onto the severities below, `BUG` to `critical`, `PERF`, `SCHEMA` and `ARCH` to `warning`, and `IDIOM` to `nit`, and keep its rule id in the title.
+If the brief names a stack add-on's review lens, run it, mapping its tiers onto the severities below as the add-on says. Judge against the installed version given with the code, not your memory.
 
 For each finding, provide:
 

@@ -29,8 +29,6 @@ Code organization:
 - Prompt construction: structured state in, string out
 - Scoring and assessment: pure transforms from state to results
 
-**In Effect (TypeScript).** The boundary is a service at a port. Decode input there with `Schema.decodeUnknownEffect`, hoisted to module scope. Wrap foreign Promise APIs once with `Effect.tryPromise({ try, catch })`, and collapse vendor failures (`HttpClientError`, `SqlError`, `SchemaError`) into the service's own `Schema.TaggedError` family with `Effect.mapError` or `Effect.catchReason`, so none leak inward. Decode external arrays element by element, logging and dropping the bad rows, so one malformed item degrades to a logged partial instead of a blank result. Inside, code runs on decoded types and never re-checks. Business logic stays in plain functions beside the types. The service's `Effect.fn` methods are the thin shell that reads `Clock`, repositories, and clients from the environment and calls those functions. Open the **effect** skill's `references/schema.md` §7 for the decode runners, `references/errors.md` §7 for mapping at the port, SKILL §6 for element-by-element decoding, and SKILL §4 with `references/architecture.md` §2 for the service and layer forms.
-
 **The tests:**
 - "Is this data crossing a system boundary right now?" If not, validation is redundant.
 - "Can this be a pure function that the shell just calls?" If yes, extract it.

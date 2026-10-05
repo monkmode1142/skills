@@ -13,7 +13,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
-import { briefProblems, isEffectBrief, type BriefCheckOptions } from "./brief.ts";
+import { FIELD_NAME, briefProblems, extraFieldBody } from "./brief.ts";
 
 const LEGACY_UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
 const UNIT_HEADER = `${LEGACY_UNIT_HEADER}\tserves`;
@@ -36,14 +36,18 @@ export type Verdict =
   | "verifier-blocked"
   | "verifier-failed";
 
-export type EffectVerdict = "idiomatic" | "fixes-required" | "inconclusive";
+export type ReviewVerdict = "pass" | "fixes-required" | "inconclusive";
 
-export type Lens = "default" | "effect";
+export type Lens = string;
 
-const PASSING: Readonly<Record<Lens, readonly string[]>> = {
-  default: ["live-ui-verified", "unit-test-verified"],
-  effect: ["idiomatic"],
-};
+const LENS_NAME = /^[a-z][a-z0-9-]*$/;
+const DEFAULT_PASSING: readonly string[] = ["live-ui-verified", "unit-test-verified"];
+const BRIEF_FIELDS_HEADER = "field\tcheck";
+
+export interface BriefField {
+  readonly field: string;
+  readonly check: string;
+}
 
 export interface Unit {
   readonly id: string;
@@ -72,9 +76,10 @@ export interface GoalProgress {
   readonly total: number;
 }
 
-export type LensVerdict =
-  | { readonly lens: "default"; readonly verdict: Verdict }
-  | { readonly lens: "effect"; readonly verdict: EffectVerdict };
+export interface LensVerdict {
+  readonly lens: Lens;
+  readonly verdict: Verdict | ReviewVerdict;
+}
 
 export type LedgerEntry = LensVerdict & {
   readonly pr: string;
@@ -163,7 +168,6 @@ export interface AddUnitParams {
   readonly brief: string;
   readonly serves: string;
   readonly reason?: string;
-  readonly repo?: string;
 }
 
 export interface AddGoalParams {
@@ -265,10 +269,13 @@ export interface Store {
     readonly list: () => Promise<readonly Goal[]>;
   };
   readonly briefs: {
-    readonly check: (
-      path: string,
-      options?: BriefCheckOptions
-    ) => Promise<readonly string[]>;
+    readonly check: (path: string) => Promise<readonly string[]>;
+    readonly require: (params: BriefField) => Promise<BriefField>;
+    readonly fields: () => Promise<readonly BriefField[]>;
+  };
+  readonly lenses: {
+    readonly require: (name: string) => Promise<readonly Lens[]>;
+    readonly list: () => Promise<readonly Lens[]>;
   };
   readonly ledger: {
     readonly record: (params: RecordLedgerParams) => Promise<LedgerEntry>;
@@ -384,8 +391,10 @@ export function parseVerdict(value: string): Verdict {
 }
 
 export function parseLens(value: string): Lens {
-  if (value !== "default" && value !== "effect") {
-    throw new UserError("lens must be default or effect");
+  if (!LENS_NAME.test(value)) {
+    throw new UserError(
+      "lens must be default or a lowercase review lens name, such as security"
+    );
   }
   return value;
 }
@@ -396,13 +405,22 @@ function lensVerdictOrNull(lens: Lens, value: string): LensVerdict | null {
     return verdict === null ? null : { lens, verdict };
   }
   switch (value) {
-    case "idiomatic":
+    case "pass":
     case "fixes-required":
     case "inconclusive":
       return { lens, verdict: value };
+    // Review-lens rows written before lenses were generic say `idiomatic` for a pass.
+    case "idiomatic":
+      return { lens, verdict: "pass" };
     default:
       return null;
   }
+}
+
+function passes(row: LensVerdict): boolean {
+  return row.lens === "default"
+    ? DEFAULT_PASSING.includes(row.verdict)
+    : row.verdict === "pass";
 }
 
 function sameCommit(recorded: string, head: string): boolean {
@@ -414,9 +432,7 @@ function sameCommit(recorded: string, head: string): boolean {
 }
 
 function lensVerdict(row: LedgerEntry): LensVerdict {
-  return row.lens === "default"
-    ? { lens: row.lens, verdict: row.verdict }
-    : { lens: row.lens, verdict: row.verdict };
+  return { lens: row.lens, verdict: row.verdict };
 }
 
 function parseLensVerdict(lens: Lens, value: string): LensVerdict {
@@ -426,7 +442,7 @@ function parseLensVerdict(lens: Lens, value: string): LensVerdict {
   const parsed = lensVerdictOrNull(lens, value);
   if (parsed === null) {
     throw new UserError(
-      "effect verdict must be idiomatic, fixes-required, or inconclusive"
+      `${lens} lens verdict must be pass, fixes-required, or inconclusive`
     );
   }
   return parsed;
@@ -676,11 +692,39 @@ async function readBrief(store: string, path: string): Promise<string | null> {
   }
 }
 
-async function checkBrief(
-  store: string,
-  path: string,
-  options: BriefCheckOptions = {}
-): Promise<readonly string[]> {
+async function readLenses(store: string): Promise<readonly Lens[]> {
+  const path = join(store, "lenses.txt");
+  if (!(await exists(path))) {
+    return [];
+  }
+  return (await readFile(path, "utf8"))
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map(parseLens);
+}
+
+async function readBriefFields(store: string): Promise<readonly BriefField[]> {
+  const path = join(store, "brief-fields.tsv");
+  if (!(await exists(path))) {
+    return [];
+  }
+  return (await readTsv(path, BRIEF_FIELDS_HEADER, 2)).map((row) => ({
+    field: row[0] ?? "",
+    check: row[1] ?? "",
+  }));
+}
+
+function runFieldCheck(field: BriefField, briefFile: string): string | null {
+  const result = Bun.spawnSync(["/bin/sh", "-c", `${field.check} "$1"`, "orch-check", briefFile]);
+  if (result.exitCode === 0) {
+    return null;
+  }
+  const output = `${result.stdout.toString()}${result.stderr.toString()}`.trim();
+  return `${field.field} check failed (${field.check}): ${output || `exit ${result.exitCode}`}`;
+}
+
+async function checkBrief(store: string, path: string): Promise<readonly string[]> {
   const text = await readBrief(store, path);
   if (text === null) {
     return [`brief ${path} not found (relative paths resolve from the store)`];
@@ -690,7 +734,17 @@ async function checkBrief(
     .replace(/\r/g, "")
     .split("\n")
     .filter((line) => line.trim().length > 0);
-  return briefProblems(text, standing, options);
+  const fields = await readBriefFields(store);
+  const problems = [...briefProblems(text, standing, fields.map((f) => f.field))];
+  for (const field of fields) {
+    if (field.check.length > 0 && (extraFieldBody(text, field.field) ?? "").length > 0) {
+      const problem = runFieldCheck(field, briefPath(store, path));
+      if (problem !== null) {
+        problems.push(problem);
+      }
+    }
+  }
+  return problems;
 }
 
 function unitCells(unit: Unit): readonly string[] {
@@ -725,9 +779,7 @@ async function readLedger(
     const rawVerdict = row[2] ?? "";
     const rawLens = row[6] ?? "";
     const verdict =
-      rawLens === "default" || rawLens === "effect"
-        ? lensVerdictOrNull(rawLens, rawVerdict)
-        : null;
+      LENS_NAME.test(rawLens) ? lensVerdictOrNull(rawLens, rawVerdict) : null;
     if (verdict === null) {
       const where = `ledger.tsv entry ${index + 1} (pr ${row[0] ?? "?"}, sha ${row[1] ?? "?"})`;
       if (mode === "strict") {
@@ -1539,7 +1591,7 @@ export function openStore(
       add: async (params) => {
         await beginWrite();
         const brief = requiredCell(params.brief, "brief");
-        const problems = await checkBrief(store, brief, { repo: params.repo });
+        const problems = await checkBrief(store, brief);
         if (problems.length > 0) {
           throw new UserError(
             `brief ${brief} is not spawnable: ${problems.join("; ")}`
@@ -1676,16 +1728,57 @@ export function openStore(
       },
     },
     briefs: {
-      check: async (path, options) => {
+      check: async (path) => {
         ensureOpen();
-        return checkBrief(store, requiredCell(path, "brief"), options);
+        return checkBrief(store, requiredCell(path, "brief"));
+      },
+      require: async (params) => {
+        await beginWrite();
+        const field = requiredLine(params.field, "field");
+        if (!FIELD_NAME.test(field)) {
+          throw new UserError(
+            "field must be upper case words, such as SECURITY NOTES"
+          );
+        }
+        const row: BriefField = { field, check: params.check.trim() };
+        const rows = (await readBriefFields(store)).filter((old) => old.field !== field);
+        rows.push(row);
+        await writeTsv(
+          join(store, "brief-fields.tsv"),
+          BRIEF_FIELDS_HEADER,
+          rows.map((value) => [value.field, value.check])
+        );
+        return row;
+      },
+      fields: async () => {
+        ensureOpen();
+        return readBriefFields(store);
+      },
+    },
+    lenses: {
+      require: async (name) => {
+        await beginWrite();
+        const lens = parseLens(requiredLine(name, "lens"));
+        if (lens === "default") {
+          throw new UserError("the default lens is always required");
+        }
+        const rows = [...(await readLenses(store))];
+        if (!rows.includes(lens)) {
+          rows.push(lens);
+          await atomicWrite(join(store, "lenses.txt"), `${rows.join("\n")}\n`);
+        }
+        return rows;
+      },
+      list: async () => {
+        ensureOpen();
+        return readLenses(store);
       },
     },
     ledger: {
       record: async (params) => {
         await beginWrite();
         const row: LedgerEntry = {
-          ...parseLensVerdict(params.lens ?? "default", params.verdict),
+          ...parseLensVerdict(parseLens(params.lens ?? "default"), params.verdict),
           pr: String(positiveInteger(params.pr, "PR")),
           sha: requiredCell(params.sha, "SHA"),
           evidence: requiredCell(params.evidence, "evidence"),
@@ -1733,15 +1826,7 @@ export function openStore(
         if (unit === undefined) {
           throw new NotFoundError(`unit ${id} not found`);
         }
-        const brief = await readBrief(store, unit.brief);
-        if (brief === null) {
-          throw new UserError(
-            `unit ${id} brief ${unit.brief} not found; cannot tell whether it needs the effect lens`
-          );
-        }
-        const required: readonly Lens[] = isEffectBrief(brief)
-          ? ["default", "effect"]
-          : ["default"];
+        const required: readonly Lens[] = ["default", ...(await readLenses(store))];
         const rows = await readLedger(store);
         const found = required.map((lens) => ({
           lens,
@@ -1749,9 +1834,7 @@ export function openStore(
             (row) => row.pr === pr && sameCommit(row.sha, sha) && row.lens === lens
           ),
         }));
-        const passes = (row: LedgerEntry | undefined): row is LedgerEntry =>
-          row !== undefined && PASSING[row.lens].includes(row.verdict);
-        if (!found.every(({ row }) => passes(row))) {
+        if (!found.every(({ row }) => row !== undefined && passes(row))) {
           const states = found.map(({ lens, row }) =>
             row === undefined
               ? `${lens} missing`

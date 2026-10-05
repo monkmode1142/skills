@@ -18,8 +18,6 @@ When debugging, do not fix symptoms. Trace every problem to its root cause and f
 - Check for the pattern, not just the instance (grep for the same pattern, fix all instances)
 - When stuck, instrument. Don't guess (add logging, read the actual error)
 
-**In Effect code** the guard has its own spellings. `Effect.ignore`, `Effect.orElseSucceed` with a default, and an `Effect.catch` that swallows every failure all silence the symptom. `Effect.catchCause` in service code also swallows interrupts. Handle a specific tag with `Effect.catchTag` only when the outcome is a real domain branch. To instrument, read the full `Cause` (`Cause.pretty`, or iterate `cause.reasons`) and the spans that `Effect.fn` methods already emit before adding logs. `Cause.squash` keeps only the first failure. Open the **effect** skill's `references/errors.md` §6 for reading `Cause` and `Exit`, §8 for the swallowing anti-patterns, and `references/v4-catalog.md` §5 when the API name is right but the behavior surprises you.
-
 **Restart bugs: suspect state before code**
 
 When something "fails after restart," suspect stale persistent state first: config files, caches, lock files, serialized state. If clearing a state file restores behavior, prioritize state validation as the fix.
