@@ -1,0 +1,19 @@
+name: effect examples
+
+on:
+  push:
+    paths: ["plugins/effect/**", ".github/workflows/effect-examples.yml"]
+  pull_request:
+    paths: ["plugins/effect/**", ".github/workflows/effect-examples.yml"]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+        working-directory: plugins/effect/scripts/effect-examples
+      - run: node plugins/effect/scripts/check-effect-examples.mjs

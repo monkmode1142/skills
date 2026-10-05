@@ -1,0 +1,12 @@
+{
+  "name": "effect",
+  "version": "0.2.0",
+  "description": "Effect v4 (effect@4.0.0) for agents: services and Layers, Schema, typed errors, fibers, streams, scheduling, platform modules, testing, review, and migration, with every code example typechecked",
+  "author": {
+    "name": "aulneau"
+  },
+  "homepage": "https://github.com/aulneau/skills/tree/main/plugins/effect",
+  "repository": "https://github.com/aulneau/skills",
+  "license": "MIT",
+  "keywords": ["effect", "effect-ts", "typescript"]
+}

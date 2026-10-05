@@ -1,7 +1,7 @@
 {
   "name": "aulneau-skills",
-  "version": "0.1.0",
-  "description": "Agent skills, starting with a v4-native Effect-TS skill",
+  "version": "0.2.0",
+  "description": "Productivity skills: bookmark corpus and brain-dump posts",
   "author": {
     "name": "aulneau"
   },
@@ -9,11 +9,9 @@
   "keywords": [
     "claude",
     "skills",
-    "effect",
-    "effect-ts"
+    "productivity"
   ],
   "skills": [
-    "./skills/engineering/effect",
     "./skills/productivity/bookmark-corpus",
     "./skills/productivity/brain-dump-post"
   ]

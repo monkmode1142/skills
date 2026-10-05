@@ -27,3 +27,7 @@ and LICENSE, and gets one entry in `marketplace.json` and one in the README's Pl
 stay out of the bucket READMEs and the root `plugin.json`. Run `claude plugin validate .` and
 `claude plugin validate plugins/<name>` after any manifest change.
 
+The effect plugin's code examples are typechecked in CI (`.github/workflows/effect-examples.yml`). Run
+`node plugins/effect/scripts/check-effect-examples.mjs` after editing them, once
+`npm ci` has run in `plugins/effect/scripts/effect-examples`. Fence a block that is meant to be wrong or
+partial as ```` ```ts nocheck ````.

@@ -1,0 +1,19 @@
+{
+  "name": "effect-examples",
+  "private": true,
+  "type": "module",
+  "description": "Pinned toolchain that typechecks the effect skill's code blocks (see ../check-effect-examples.mjs)",
+  "devDependencies": {
+    "@effect/ai-anthropic": "4.0.0",
+    "@effect/ai-openai": "4.0.0",
+    "@effect/platform-bun": "4.0.0",
+    "@effect/platform-node": "4.0.0",
+    "@effect/sql-pg": "4.0.0",
+    "@effect/sql-sqlite-node": "4.0.0",
+    "@effect/vitest": "4.0.0",
+    "@types/node": "^24.0.0",
+    "effect": "4.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.0"
+  }
+}

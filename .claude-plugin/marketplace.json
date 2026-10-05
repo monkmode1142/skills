@@ -8,7 +8,12 @@
     {
       "name": "aulneau-skills",
       "source": "./",
-      "description": "A v4-native Effect-TS skill and productivity skills"
+      "description": "Productivity skills: bookmark corpus and brain-dump posts"
+    },
+    {
+      "name": "effect",
+      "source": "./plugins/effect",
+      "description": "Effect v4 (effect@4.0.0) for agents, with every code example typechecked"
     },
     {
       "name": "pstack",
