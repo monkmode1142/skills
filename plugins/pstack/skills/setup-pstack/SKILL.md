@@ -34,7 +34,13 @@ If `~/.agents/pstack/models.md` exists, read it and treat its `# budget` line an
 
 Every value written must be detected, `inherit`, or a reachable cross-family runner. If a chosen value is not available, stop and ask again.
 
-A Claude Code alias (`opus`, `sonnet`) can resolve to an older model than the parent runs. An Opus 5.5 parent once spawned Opus 4.8 subagents through `opus`. Write `inherit` for any tier the parent already covers. Inside bb, write any other Claude tier as `bb:claude-code/<exact id>` from `bb provider models claude-code`. Outside bb, write a bare alias only after spawning one subagent with it and confirming the model it reports.
+A Claude Code alias (`opus`, `sonnet`, `fable`, `haiku`) can resolve to an older model than the parent runs. An Opus 5.5 parent once spawned Opus 4.8 subagents through `opus`. Pin the aliases instead of avoiding them. Claude Code reads `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_FABLE_MODEL`, and `ANTHROPIC_DEFAULT_HAIKU_MODEL` from the `env` block of `~/.claude/settings.json`.
+
+1. Take the newest id per tier from `bb provider models claude-code`, or from the harness's model list outside bb.
+2. Show the user the four pins and the settings file you will change, and write them only on their yes. Back up the file first.
+3. Verify each pin in a fresh process. `claude -p --model <alias> --output-format json "ok"` reports the serving model under `modelUsage`. A pin takes effect for sessions started after the write.
+
+With the pins in place, write the aliases in `models.md`. Don't write `inherit` as a workaround for alias drift. Offer it only when the user wants a role to follow whatever the parent runs.
 
 ### 5. Write the file
 

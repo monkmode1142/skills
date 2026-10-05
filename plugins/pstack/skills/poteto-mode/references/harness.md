@@ -10,7 +10,7 @@ pstack is written against a small set of capabilities, not against one agent pro
 | The pstack subagent | `subagent_type: "poteto-agent"` (installed at `~/.claude/agents/poteto-agent.md`), or `"pstack:poteto-agent"` when pstack is installed as a Claude Code plugin | A subagent whose brief opens with "Read the `poteto-mode` skill's SKILL.md in full before any work" | Same brief prefix |
 | Ask the user a structured question | `AskUserQuestion` | Plain message with numbered options | Plain message with numbered options |
 | Todo list | `TodoWrite` / task tools | `update_plan` | A Markdown checklist kept in the reply |
-| Pick a model per subagent | `Agent` `model` param (`opus`, `sonnet`, `haiku`, `fable`). An alias can resolve to an older model than the parent, so prefer `inherit` (see setup-pstack) | `codex exec -m <model>` | Omit, run on the parent model |
+| Pick a model per subagent | `Agent` `model` param (`opus`, `sonnet`, `haiku`, `fable`). Aliases are pinned to exact ids by `ANTHROPIC_DEFAULT_*_MODEL` in `~/.claude/settings.json`. Unpinned, an alias can resolve to an older model than the parent (see setup-pstack) | `codex exec -m <model>` | Omit, run on the parent model |
 | A different model family (diversity) | `codex exec` from a shell, if `codex` is on PATH | `claude -p` from a shell, if `claude` is on PATH | Same model, different lens per reviewer. Treat agreement as weaker evidence and say so |
 | Always-applied rules | `~/.claude/CLAUDE.md`, project `CLAUDE.md` | `~/.codex/AGENTS.md`, project `AGENTS.md` | Project `AGENTS.md` |
 | Skills directory | `~/.claude/skills/`, project `.claude/skills/` | `~/.agents/skills/`, project `.agents/skills/` | `~/.agents/skills/` |
