@@ -13,15 +13,21 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
-import { briefProblems } from "./brief.ts";
+import { briefProblems, isEffectBrief, type BriefCheckOptions } from "./brief.ts";
 
 const LEGACY_UNIT_HEADER = "id\ttrack\tstate\tbranch\tpr\tsha\tbrief";
 const UNIT_HEADER = `${LEGACY_UNIT_HEADER}\tserves`;
 const GOAL_HEADER = "id\toutcome\tcheck\tstate";
 const UNITS_SUM_FILE = ".units.sha256";
 const NOT_IN_FLIGHT = /^(landed|done|merged|dropped|abandoned|superseded|absorbed|parked|paused)/;
-const LEDGER_HEADER = "pr\tsha\tverdict\tevidence\tverifier\tts";
+const LEGACY_LEDGER_HEADER = "pr\tsha\tverdict\tevidence\tverifier\tts";
+const LEDGER_HEADER = `${LEGACY_LEDGER_HEADER}\tlens`;
 const LOCK_FILE = ".orch.lock";
+const LEGACY_COLUMN: ReadonlyMap<string, { readonly header: string; readonly fill: string }> =
+  new Map([
+    [UNIT_HEADER, { header: LEGACY_UNIT_HEADER, fill: "" }],
+    [LEDGER_HEADER, { header: LEGACY_LEDGER_HEADER, fill: "default" }],
+  ]);
 
 export type Verdict =
   | "live-ui-verified"
@@ -29,6 +35,15 @@ export type Verdict =
   | "type-check-only"
   | "verifier-blocked"
   | "verifier-failed";
+
+export type EffectVerdict = "idiomatic" | "fixes-required" | "inconclusive";
+
+export type Lens = "default" | "effect";
+
+const PASSING: Readonly<Record<Lens, readonly string[]>> = {
+  default: ["live-ui-verified", "unit-test-verified"],
+  effect: ["idiomatic"],
+};
 
 export interface Unit {
   readonly id: string;
@@ -57,14 +72,17 @@ export interface GoalProgress {
   readonly total: number;
 }
 
-export interface LedgerEntry {
+export type LensVerdict =
+  | { readonly lens: "default"; readonly verdict: Verdict }
+  | { readonly lens: "effect"; readonly verdict: EffectVerdict };
+
+export type LedgerEntry = LensVerdict & {
   readonly pr: string;
   readonly sha: string;
-  readonly verdict: Verdict;
   readonly evidence: string;
   readonly verifier: string;
   readonly ts: string;
-}
+};
 
 export interface InboxPointer {
   readonly ts: string;
@@ -145,6 +163,7 @@ export interface AddUnitParams {
   readonly brief: string;
   readonly serves: string;
   readonly reason?: string;
+  readonly repo?: string;
 }
 
 export interface AddGoalParams {
@@ -174,14 +193,28 @@ export interface ListUnitsParams {
 export interface RecordLedgerParams {
   readonly pr: number;
   readonly sha: string;
-  readonly verdict: Verdict;
+  readonly verdict: string;
   readonly evidence: string;
   readonly verifier?: string;
+  readonly lens?: Lens;
 }
 
 export interface CheckLedgerParams {
   readonly pr: number;
   readonly sha: string;
+  readonly lens?: Lens;
+}
+
+export interface GateLedgerParams {
+  readonly pr: number;
+  readonly sha: string;
+  readonly unit: string;
+}
+
+export interface LandingGate {
+  readonly unit: string;
+  readonly sha: string;
+  readonly lenses: readonly LensVerdict[];
 }
 
 export interface PushInboxParams {
@@ -232,11 +265,15 @@ export interface Store {
     readonly list: () => Promise<readonly Goal[]>;
   };
   readonly briefs: {
-    readonly check: (path: string) => Promise<readonly string[]>;
+    readonly check: (
+      path: string,
+      options?: BriefCheckOptions
+    ) => Promise<readonly string[]>;
   };
   readonly ledger: {
     readonly record: (params: RecordLedgerParams) => Promise<LedgerEntry>;
     readonly check: (params: CheckLedgerParams) => Promise<LedgerEntry>;
+    readonly gate: (params: GateLedgerParams) => Promise<LandingGate>;
     readonly summary: () => Promise<Counts>;
   };
   readonly inbox: {
@@ -344,6 +381,55 @@ export function parseVerdict(value: string): Verdict {
     );
   }
   return verdict;
+}
+
+export function parseLens(value: string): Lens {
+  if (value !== "default" && value !== "effect") {
+    throw new UserError("lens must be default or effect");
+  }
+  return value;
+}
+
+function lensVerdictOrNull(lens: Lens, value: string): LensVerdict | null {
+  if (lens === "default") {
+    const verdict = verdictOrNull(value);
+    return verdict === null ? null : { lens, verdict };
+  }
+  switch (value) {
+    case "idiomatic":
+    case "fixes-required":
+    case "inconclusive":
+      return { lens, verdict: value };
+    default:
+      return null;
+  }
+}
+
+function sameCommit(recorded: string, head: string): boolean {
+  return (
+    recorded === head ||
+    (recorded.length >= 7 && head.length >= 7 &&
+      (head.startsWith(recorded) || recorded.startsWith(head)))
+  );
+}
+
+function lensVerdict(row: LedgerEntry): LensVerdict {
+  return row.lens === "default"
+    ? { lens: row.lens, verdict: row.verdict }
+    : { lens: row.lens, verdict: row.verdict };
+}
+
+function parseLensVerdict(lens: Lens, value: string): LensVerdict {
+  if (lens === "default") {
+    return { lens, verdict: parseVerdict(value) };
+  }
+  const parsed = lensVerdictOrNull(lens, value);
+  if (parsed === null) {
+    throw new UserError(
+      "effect verdict must be idiomatic, fixes-required, or inconclusive"
+    );
+  }
+  return parsed;
 }
 
 function cleanCell(value: string): string {
@@ -500,11 +586,12 @@ async function readTsv(
 ): Promise<readonly (readonly string[])[]> {
   const lines = (await requiredFile(path)).replace(/\r/g, "").split("\n");
   const found = lines.shift();
-  const legacyUnits = header === UNIT_HEADER && found === LEGACY_UNIT_HEADER;
-  if (found !== header && !legacyUnits) {
+  const legacy = LEGACY_COLUMN.get(header);
+  const isLegacy = legacy !== undefined && found === legacy.header;
+  if (found !== header && !isLegacy) {
     throw new UserError(`${basename(path)} has an invalid header`);
   }
-  const expected = legacyUnits ? width - 1 : width;
+  const expected = isLegacy ? width - 1 : width;
   return lines
     .filter((value) => value.length > 0)
     .map((value) => {
@@ -512,7 +599,7 @@ async function readTsv(
       if (cells.length !== expected) {
         throw new UserError(`${basename(path)} has a malformed row`);
       }
-      return legacyUnits ? [...cells, ""] : cells;
+      return isLegacy ? [...cells, legacy.fill] : cells;
     });
 }
 
@@ -578,22 +665,32 @@ function briefPath(store: string, path: string): string {
   return isAbsolute(path) ? path : join(store, path);
 }
 
-async function checkBrief(store: string, path: string): Promise<readonly string[]> {
-  let text: string;
+async function readBrief(store: string, path: string): Promise<string | null> {
   try {
-    text = await readFile(briefPath(store, path), "utf8");
+    return await readFile(briefPath(store, path), "utf8");
   } catch (error) {
     if (errorCode(error) === "ENOENT") {
-      return [`brief ${path} not found (relative paths resolve from the store)`];
+      return null;
     }
     throw error;
+  }
+}
+
+async function checkBrief(
+  store: string,
+  path: string,
+  options: BriefCheckOptions = {}
+): Promise<readonly string[]> {
+  const text = await readBrief(store, path);
+  if (text === null) {
+    return [`brief ${path} not found (relative paths resolve from the store)`];
   }
   await readStanding(store);
   const standing = (await readFile(join(store, "preferences.md"), "utf8"))
     .replace(/\r/g, "")
     .split("\n")
     .filter((line) => line.trim().length > 0);
-  return briefProblems(text, standing);
+  return briefProblems(text, standing, options);
 }
 
 function unitCells(unit: Unit): readonly string[] {
@@ -622,11 +719,15 @@ async function readLedger(
   store: string,
   mode: "strict" | "lenient" = "lenient"
 ): Promise<readonly LedgerEntry[]> {
-  const rows = await readTsv(join(store, "ledger.tsv"), LEDGER_HEADER, 6);
+  const rows = await readTsv(join(store, "ledger.tsv"), LEDGER_HEADER, 7);
   const entries: LedgerEntry[] = [];
   rows.forEach((row, index) => {
     const rawVerdict = row[2] ?? "";
-    const verdict = verdictOrNull(rawVerdict);
+    const rawLens = row[6] ?? "";
+    const verdict =
+      rawLens === "default" || rawLens === "effect"
+        ? lensVerdictOrNull(rawLens, rawVerdict)
+        : null;
     if (verdict === null) {
       const where = `ledger.tsv entry ${index + 1} (pr ${row[0] ?? "?"}, sha ${row[1] ?? "?"})`;
       if (mode === "strict") {
@@ -640,9 +741,9 @@ async function readLedger(
       return;
     }
     entries.push({
+      ...verdict,
       pr: row[0] ?? "",
       sha: row[1] ?? "",
-      verdict,
       evidence: row[3] ?? "",
       verifier: row[4] ?? "",
       ts: row[5] ?? "",
@@ -659,6 +760,7 @@ function ledgerCells(row: LedgerEntry): readonly string[] {
     row.evidence,
     row.verifier,
     row.ts,
+    row.lens,
   ];
 }
 
@@ -1115,7 +1217,7 @@ ${table(
 Verdicts: ${countLine(currentSummary.ledgerVerdicts)}
 
 ${table(
-  ["PR", "SHA", "Verdict", "Evidence", "Verifier", "Timestamp"],
+  ["PR", "SHA", "Verdict", "Evidence", "Verifier", "Timestamp", "Lens"],
   ledgerRows.map(ledgerCells)
 )}
 
@@ -1437,7 +1539,7 @@ export function openStore(
       add: async (params) => {
         await beginWrite();
         const brief = requiredCell(params.brief, "brief");
-        const problems = await checkBrief(store, brief);
+        const problems = await checkBrief(store, brief, { repo: params.repo });
         if (problems.length > 0) {
           throw new UserError(
             `brief ${brief} is not spawnable: ${problems.join("; ")}`
@@ -1574,19 +1676,18 @@ export function openStore(
       },
     },
     briefs: {
-      check: async (path) => {
+      check: async (path, options) => {
         ensureOpen();
-        return checkBrief(store, requiredCell(path, "brief"));
+        return checkBrief(store, requiredCell(path, "brief"), options);
       },
     },
     ledger: {
       record: async (params) => {
         await beginWrite();
-        const verdict = parseVerdict(params.verdict);
         const row: LedgerEntry = {
+          ...parseLensVerdict(params.lens ?? "default", params.verdict),
           pr: String(positiveInteger(params.pr, "PR")),
           sha: requiredCell(params.sha, "SHA"),
-          verdict,
           evidence: requiredCell(params.evidence, "evidence"),
           verifier:
             params.verifier === undefined
@@ -1596,7 +1697,8 @@ export function openStore(
         };
         const rows = [...(await readLedger(store, "strict"))];
         const index = rows.findIndex(
-          (old) => old.pr === row.pr && old.sha === row.sha
+          (old) =>
+            old.pr === row.pr && old.sha === row.sha && old.lens === row.lens
         );
         if (index < 0) {
           rows.push(row);
@@ -1610,8 +1712,9 @@ export function openStore(
         ensureOpen();
         const pr = String(positiveInteger(params.pr, "PR"));
         const sha = requiredCell(params.sha, "SHA");
+        const lens = params.lens ?? "default";
         const row = (await readLedger(store)).find(
-          (value) => value.pr === pr && value.sha === sha
+          (value) => value.pr === pr && value.sha === sha && value.lens === lens
         );
         if (row === undefined) {
           throw new NotFoundError("NOT-VERIFIED", {
@@ -1620,6 +1723,51 @@ export function openStore(
           });
         }
         return row;
+      },
+      gate: async (params) => {
+        ensureOpen();
+        const pr = String(positiveInteger(params.pr, "PR"));
+        const sha = requiredCell(params.sha, "SHA");
+        const id = requiredCell(params.unit, "unit id");
+        const unit = (await readUnits(store)).find((row) => row.id === id);
+        if (unit === undefined) {
+          throw new NotFoundError(`unit ${id} not found`);
+        }
+        const brief = await readBrief(store, unit.brief);
+        if (brief === null) {
+          throw new UserError(
+            `unit ${id} brief ${unit.brief} not found; cannot tell whether it needs the effect lens`
+          );
+        }
+        const required: readonly Lens[] = isEffectBrief(brief)
+          ? ["default", "effect"]
+          : ["default"];
+        const rows = await readLedger(store);
+        const found = required.map((lens) => ({
+          lens,
+          row: rows.find(
+            (row) => row.pr === pr && sameCommit(row.sha, sha) && row.lens === lens
+          ),
+        }));
+        const passes = (row: LedgerEntry | undefined): row is LedgerEntry =>
+          row !== undefined && PASSING[row.lens].includes(row.verdict);
+        if (!found.every(({ row }) => passes(row))) {
+          const states = found.map(({ lens, row }) =>
+            row === undefined
+              ? `${lens} missing`
+              : `${lens} ${row.verdict}${passes(row) ? "" : " (not a pass)"}`
+          );
+          throw new UserError(
+            `unit ${id} at ${sha} is not landable: ${states.join("; ")}`
+          );
+        }
+        return {
+          unit: id,
+          sha,
+          lenses: found.flatMap(({ row }) =>
+            row === undefined ? [] : [lensVerdict(row)]
+          ),
+        };
       },
       summary: async () => {
         ensureOpen();

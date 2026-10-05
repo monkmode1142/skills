@@ -16,6 +16,7 @@ The sketch is written in the target's own idiom. When the boundary is non-fronte
 - `Layer` provision. How the implementation is built and which services it requires, so the dependency graph is visible in the sketch.
 - Schema data. Domain types and external inputs as Schemas, decoded once at the boundary.
 - tagged errors. Each expected failure is a tagged error in the error channel, not a thrown exception.
+- an Effect inventory. For each capability the sketch would build (time, retry, polling, cache, queue, lock, parsing, ordering, grouping, decimal, graph, LLM I/O), name what you searched in the installed `effect` and what you chose, as `searched X, chose Z (dist/<file>:<line>)` or `none fits because …`. It becomes the brief's `EFFECT MAP` block, which `orch brief check` validates.
 
 Bodies stay unimplemented, as in any other sketch. Apply the service test from **effect-service-design** before minting a service. A pure calculation or a per-call option stays a value. Defer every API detail to the **effect** skill, plus **effect-service-design** when installed, and run its SKILL §1 version gate against the project's installed version. Don't write signatures from memory. Its SKILL §4 and §5 and `references/architecture.md` §2 and §8 give the service and Layer shape, `references/schema.md` §8 the data, and `references/errors.md` §2 and §3 the failures. [effect.md](../poteto-mode/references/effect.md) maps the rest. Frontend UI code stays plain TypeScript unless the project already uses Effect there.
 

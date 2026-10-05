@@ -8,7 +8,7 @@ Every reference below is relative to the effect skill's directory (`~/.agents/sk
 
 1. **Version gate, every task.** Run SKILL §1 before reading or writing Effect code. A `4.0.0-rc.*` or `-beta.*` install means the project's names differ from the skill's (most visibly the `effect/unstable/*` paths). Follow the installed source and offer the upgrade from `references/migration.md`. A `3.x` install means don't apply v4 shapes at all.
 2. **Read the body once per session.** SKILL §1 through §8 is self-sufficient for everyday work. Load a reference only when the row below names it.
-3. **Done gate.** SKILL §8 "Before you call it done" is part of **principle-prove-it-works** for any change that touches Effect code. Run its checklist before the reply, and name failures instead of skipping boxes.
+3. **Done gate.** SKILL §8 "Before you call it done" is part of **principle-prove-it-works** for any change that touches Effect code. Run its checklist before the reply, and name failures instead of skipping boxes. The Toolbox, Tests and Diagnostics boxes take evidence (the exports checked, the test runner used, the diagnostics output), and matching repo style waives none of them. Your own §8 pass is a self-check. Landing an Effect unit also needs the Effect-expert seat's verdict (`references/review.md`, The Effect-expert seat).
 
 ## Where each pstack step opens the effect skill
 
@@ -37,5 +37,8 @@ A subagent or child thread that will write Effect code gets these lines in its b
 
 - "Load the **effect** skill and run its §1 version gate before writing code. Follow the installed version where it differs."
 - "Before reporting done, run the effect skill's §8 checklist and include its result."
+- "Before writing a helper for time, retry, polling, cache, queue, lock, parsing, ordering, grouping, decimal, graph or LLM I/O, search the installed effect (`references/primitives.md`, `modules.md`, review.md catalog A). Report each hand-rolled capability with the export checked (`dist/…:line`) and why it does not fit, or `none`."
 
-Reviewers of an Effect diff get "Use the effect skill's `references/review.md` procedure" in their brief. A cross-family seat that cannot load skills gets the paths, because the files are plain Markdown it can read.
+Its CONTEXT also carries an `EFFECT MAP` block: the design's Effect inventory (**architect**, The design unit), one line per capability, as `<capability>: <export> (dist/<file>:<line>)` or `none: <reason>`. Name the repo with a `Repo <dir>` line, or pass `--repo`. `orch brief check` refuses an Effect brief that lacks any of the three lines or the block, or cites a `dist` path:line that doesn't resolve under the repo's installed `effect`.
+
+Reviewers of an Effect diff get "Use the effect skill's `references/review.md` procedure" in their brief. A cross-family seat that cannot load skills gets the paths, because the files are plain Markdown it can read. The Effect-expert seat (`references/review.md`, The Effect-expert seat) records its verdict with `orch ledger record <pr> <sha> <idiomatic|fixes-required|inconclusive> --lens effect`. `orch ledger check <pr> <sha> --unit <id>` refuses to land an Effect unit without a passing default verdict and an `idiomatic` effect verdict for that exact head SHA.

@@ -8,7 +8,7 @@ import {
   goalLine,
   openStore,
   parseGoalState,
-  parseVerdict,
+  parseLens,
   type Counts,
   type Goal,
   type GoalState,
@@ -18,8 +18,8 @@ import {
   type StandingLine,
   type StatusReport,
   type Store,
+  type Lens,
   type Unit,
-  type Verdict,
 } from "./store.ts";
 
 ensureDependenciesInstalled();
@@ -32,6 +32,8 @@ const {
 type Command = InstanceType<typeof CommanderCommand>;
 
 const DISPLAY_LIMIT = 4;
+const REPO_HELP =
+  "directory whose installed effect resolves EFFECT MAP dist citations (default: the brief's Repo line)";
 
 interface Io {
   readonly stdout: (value: string) => void;
@@ -49,6 +51,11 @@ interface UnitAddOptions {
   readonly brief: string;
   readonly serves: string;
   readonly reason?: string;
+  readonly repo?: string;
+}
+
+interface BriefCheckCliOptions {
+  readonly repo?: string;
 }
 
 interface GoalAddOptions {
@@ -75,6 +82,12 @@ interface UnitListOptions {
 interface LedgerRecordOptions {
   readonly evidence: string;
   readonly verifier?: string;
+  readonly lens: Lens;
+}
+
+interface LedgerCheckOptions {
+  readonly lens?: Lens;
+  readonly unit?: string;
 }
 
 interface InboxPushOptions {
@@ -110,6 +123,14 @@ function positiveInteger(value: string): number {
     throw new InvalidArgumentError("must be a positive integer");
   }
   return parsed;
+}
+
+function lensArgument(value: string): Lens {
+  try {
+    return parseLens(value);
+  } catch (error) {
+    throw new InvalidArgumentError(message(error));
+  }
 }
 
 function prList(value: string): readonly number[] {
@@ -311,6 +332,7 @@ function createProgram(io: Io): Command {
     )
     .requiredOption("--serves <goal>", "goal id from goals.tsv, or none")
     .option("--reason <text>", "why an off-goal unit (--serves none) earns a slot")
+    .option("--repo <dir>", REPO_HELP)
     .action((id: string, options: UnitAddOptions) =>
       runStore(
         program,
@@ -322,6 +344,7 @@ function createProgram(io: Io): Command {
             brief: options.brief,
             serves: options.serves,
             reason: options.reason,
+            repo: options.repo,
           }),
         unitLine
       )
@@ -403,13 +426,14 @@ function createProgram(io: Io): Command {
     .command("brief")
     .description("validate briefs before spawning")
     .action(() => requireSubcommand(program));
-  leaf(brief, "check <path>", "fail unless the brief is spawnable").action(
-    (path: string) =>
+  leaf(brief, "check <path>", "fail unless the brief is spawnable")
+    .option("--repo <dir>", REPO_HELP)
+    .action((path: string, options: BriefCheckCliOptions) =>
       runStore(
         program,
         io,
         async (store) => {
-          const problems = await store.briefs.check(path);
+          const problems = await store.briefs.check(path, { repo: options.repo });
           if (problems.length > 0) {
             throw new UserError(
               `brief ${path} is not spawnable:\n${problems.map((problem) => `- ${problem}`).join("\n")}`
@@ -419,7 +443,7 @@ function createProgram(io: Io): Command {
         },
         () => "ok"
       )
-  );
+    );
 
   const ledger = program
     .command("ledger")
@@ -428,14 +452,18 @@ function createProgram(io: Io): Command {
   leaf(ledger, "record", "record a verification verdict")
     .argument("<pr>", "pull request number", positiveInteger)
     .argument("<sha>", "commit SHA")
-    .argument("<verdict>", "verification verdict", parseVerdict)
+    .argument(
+      "<verdict>",
+      "default lens: live-ui-verified | unit-test-verified | type-check-only | verifier-blocked | verifier-failed; effect lens: idiomatic | fixes-required | inconclusive"
+    )
     .requiredOption("--evidence <path>", "evidence path")
     .option("--verifier <name>", "verifier name")
+    .option("--lens <lens>", "default or effect", lensArgument, "default")
     .action(
       (
         pr: number,
         sha: string,
-        verdict: Verdict,
+        verdict: string,
         options: LedgerRecordOptions
       ) =>
         runStore(
@@ -448,21 +476,38 @@ function createProgram(io: Io): Command {
               verdict,
               evidence: options.evidence,
               verifier: options.verifier,
+              lens: options.lens,
             }),
-          (row) => `${row.pr}\t${row.sha}\t${row.verdict}`
+          (row) => `${row.pr}\t${row.sha}\t${row.verdict}\t${row.lens}`
         )
     );
-  leaf(ledger, "check", "check a verification verdict")
+  leaf(ledger, "check", "check a verdict, or with --unit whether the unit may land")
     .argument("<pr>", "pull request number", positiveInteger)
     .argument("<sha>", "commit SHA")
-    .action((pr: number, sha: string) =>
-      runStore(
-        program,
-        io,
-        (store) => store.ledger.check({ pr, sha }),
-        (row) => row.verdict
-      )
-    );
+    .option("--lens <lens>", "default or effect", lensArgument)
+    .addOption(
+      new Option(
+        "--unit <id>",
+        "require a passing verdict on every lens the unit needs (effect too for Effect briefs)"
+      ).conflicts("lens")
+    )
+    .action((pr: number, sha: string, options: LedgerCheckOptions) => {
+      const unitId = options.unit;
+      return unitId === undefined
+        ? runStore(
+            program,
+            io,
+            (store) => store.ledger.check({ pr, sha, lens: options.lens }),
+            (row) => row.verdict
+          )
+        : runStore(
+            program,
+            io,
+            (store) => store.ledger.gate({ pr, sha, unit: unitId }),
+            (gate) =>
+              gate.lenses.map((row) => `${row.lens}\t${row.verdict}`).join("\n")
+          );
+    });
   leaf(ledger, "summary", "count verification verdicts").action(() =>
     runStore(program, io, (store) => store.ledger.summary(), countLine)
   );
